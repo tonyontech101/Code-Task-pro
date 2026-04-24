@@ -56,15 +56,34 @@ class AppSidebar extends HTMLElement {
 
             <!-- Labels -->
             <div class="px-3 mb-2">
+            <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Priority</span>
+            <ul class="space-y-0.5" id="sidebarLabels">
+                <li><button class="sidebar-item sidebar-label w-full" data-label="all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">All Priorities</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="urgent">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">Urgent</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="high">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">High</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="low">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">Low</span>
+                </button></li>
+            </ul>
+            </div>
+
+            <!-- Labels -->
+            <div class="px-3 mb-2">
             <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Labels</span>
             <ul class="space-y-0.5" id="sidebarLabels">
                 <li><button class="sidebar-item sidebar-label w-full" data-label="all">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                 <span class="text-gray-400">All Labels</span>
-                </button></li>
-                <li><button class="sidebar-item sidebar-label w-full" data-label="urgent">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                <span class="text-red-400">Urgent</span>
                 </button></li>
                 <li><button class="sidebar-item sidebar-label w-full" data-label="wip">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
