@@ -1,0 +1,94 @@
+class AppSidebar extends HTMLElement {
+  connectedCallback() {
+    this.innerHTML = `
+        <aside class="flex flex-shrink-0 border-r border-white/[0.06]">
+
+        <!-- Icon Rail -->
+        <nav class="flex flex-col items-center w-14 py-3 gap-0.5 border-r border-white/[0.06] bg-surface">
+            <!-- Logo -->
+            <div class="flex items-center justify-center w-9 h-9 mb-2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#00d4c8" opacity="0.9"/>
+                <path d="M2 17l10 5 10-5" stroke="#8b5cf6" stroke-width="2" fill="none"/>
+                <path d="M2 12l10 5 10-5" stroke="#00d4c8" stroke-width="2" fill="none" opacity="0.6"/>
+            </svg>
+            </div>
+
+            <button class="rail-btn active" title="Dashboard" data-tip="Dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+            <button class="rail-btn" title="Projects">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <button class="rail-btn" title="Team">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+            <button class="rail-btn" title="Notes">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button class="rail-btn" title="Inbox">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            </button>
+            <button class="rail-btn" title="Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+
+            <div class="flex-1"></div>
+
+            <button class="rail-btn text-gray-600 hover:text-red-400 hover:bg-red-500/10" title="Logout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </nav>
+
+        <!-- Sidebar Panel -->
+        <div class="w-[220px] bg-surface flex flex-col py-5 gap-2 overflow-y-auto">
+
+            <!-- Projects --> 
+            <div class="px-3 mb-2">
+            <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Projects</span>
+            <ul class="space-y-0.5" id="sidebarProjects">
+                <li><button class="sidebar-item sidebar-project active w-full" data-project="all"><span class="w-2 h-2 rounded-full bg-cyan flex-shrink-0"></span>All Tasks</button></li>
+                <li><button class="sidebar-item sidebar-project w-full" data-project="Core v2.1"><span class="w-2 h-2 rounded-full bg-cyan flex-shrink-0"></span>Core v2.1</button></li>
+                <li><button class="sidebar-item sidebar-project w-full" data-project="API v1.3"><span class="w-2 h-2 rounded-full bg-purple flex-shrink-0"></span>API v1.3</button></li>
+                <li><button class="sidebar-item sidebar-project w-full" data-project="Auth v1"><span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>Auth v1</button></li>
+            </ul>
+            </div>
+
+            <!-- Labels -->
+            <div class="px-3 mb-2">
+            <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Labels</span>
+            <ul class="space-y-0.5" id="sidebarLabels">
+                <li><button class="sidebar-item sidebar-label w-full" data-label="all">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">All Labels</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="urgent">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-red-400">Urgent</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="wip">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">WIP</span>
+                </button></li>
+                <li><button class="sidebar-item sidebar-label w-full" data-label="backend">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span class="text-gray-400">Backend</span>
+                </button></li>
+            </ul>
+            </div>
+
+            <!-- Inbox -->
+            <div class="px-3 mt-auto pt-3 border-t border-white/[0.06]">
+            <button class="sidebar-item sidebar-inbox w-full" data-action="inbox">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                <span>Inbox</span>
+                <span id="inboxBadge" class="ml-auto text-[11px] font-semibold text-gray-400 bg-overlay border border-white/10 rounded-full px-2 py-0.5">12</span>
+            </button>
+            </div>
+
+        </div>
+        </aside>
+    `;
+  }
+}
+customElements.define('app-sidebar', AppSidebar);
