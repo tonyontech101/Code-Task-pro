@@ -19,6 +19,9 @@ class AppTaskModal extends HTMLElement {
                 <option value="wip">WIP</option>
               </select>
             </div>
+            <select id="newTaskProject" class="modal-input">
+              <!-- populated dynamically by openNewTaskModal() -->
+            </select>
             <input id="newTaskDeadline" type="text" placeholder="Deadline (e.g. 14 Dec)" class="modal-input" />
           </div>
           <div class="flex gap-2 mt-5 justify-end">

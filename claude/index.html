@@ -143,10 +143,55 @@
             <option value="completed">Completed</option>
           </select>
         </div>
+        <!-- Invite Members -->
+        <div>
+          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Invite Members</p>
+          <div id="newProjectMembers" class="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+            <p class="text-[12px] text-gray-600 italic">Add team members first to invite them.</p>
+          </div>
+        </div>
       </div>
       <div class="flex gap-2 mt-5 justify-end">
         <button class="px-4 py-2 text-[13px] text-gray-400 bg-overlay hover:bg-hover rounded-lg transition-colors" onclick="closeNewProjectModal()">Cancel</button>
         <button class="px-4 py-2 text-[13px] font-semibold text-base bg-cyan rounded-lg hover:opacity-90 transition-opacity" onclick="addNewProject()">Create Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div id="editProjectBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center" onclick="closeEditProjectOnBackdrop(event)">
+    <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+      <h3 class="text-[16px] font-bold mb-4">Edit Project</h3>
+      <input type="hidden" id="editProjectId" />
+      <div class="flex flex-col gap-3">
+        <input id="editProjectName" type="text" placeholder="Project name..." class="modal-input" />
+        <input id="editProjectDesc" type="text" placeholder="Short description..." class="modal-input" />
+        <div class="flex gap-3">
+          <select id="editProjectColor" class="modal-input flex-1">
+            <option value="#00d4c8">Cyan</option>
+            <option value="#8b5cf6">Purple</option>
+            <option value="#ef4444">Red</option>
+            <option value="#f59e0b">Amber</option>
+            <option value="#10b981">Green</option>
+            <option value="#3b82f6">Blue</option>
+          </select>
+          <select id="editProjectStatus" class="modal-input flex-1">
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <!-- Manage Members -->
+        <div>
+          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Team Members</p>
+          <div id="editProjectMembers" class="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+            <p class="text-[12px] text-gray-600 italic">No team members available.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5 justify-end">
+        <button class="px-4 py-2 text-[13px] text-gray-400 bg-overlay hover:bg-hover rounded-lg transition-colors" onclick="closeEditProjectModal()">Cancel</button>
+        <button class="px-4 py-2 text-[13px] font-semibold text-base bg-cyan rounded-lg hover:opacity-90 transition-opacity" onclick="saveEditProject()">Save Changes</button>
       </div>
     </div>
   </div>

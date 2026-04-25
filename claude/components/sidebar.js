@@ -43,21 +43,18 @@ class AppSidebar extends HTMLElement {
         <!-- Sidebar Panel -->
         <div class="w-[220px] bg-surface flex flex-col py-5 gap-2 overflow-y-auto">
 
-            <!-- Projects --> 
+            <!-- Projects (dynamically rendered by app.js) --> 
             <div class="px-3 mb-2">
             <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Projects</span>
             <ul class="space-y-0.5" id="sidebarProjects">
-                <li><button class="sidebar-item sidebar-project active w-full" data-project="all"><span class="w-2 h-2 rounded-full bg-cyan flex-shrink-0"></span>All Tasks</button></li>
-                <li><button class="sidebar-item sidebar-project w-full" data-project="Core v2.1"><span class="w-2 h-2 rounded-full bg-cyan flex-shrink-0"></span>Core v2.1</button></li>
-                <li><button class="sidebar-item sidebar-project w-full" data-project="API v1.3"><span class="w-2 h-2 rounded-full bg-purple flex-shrink-0"></span>API v1.3</button></li>
-                <li><button class="sidebar-item sidebar-project w-full" data-project="Auth v1"><span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>Auth v1</button></li>
+                <!-- populated by renderSidebarProjects() -->
             </ul>
             </div>
 
-            <!-- Labels -->
+            <!-- Priority -->
             <div class="px-3 mb-2">
             <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Priority</span>
-            <ul class="space-y-0.5" id="sidebarLabels">
+            <ul class="space-y-0.5" id="sidebarPriority">
                 <li><button class="sidebar-item sidebar-label w-full" data-label="all">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                 <span class="text-gray-400">All Priorities</span>
@@ -80,7 +77,7 @@ class AppSidebar extends HTMLElement {
             <!-- Labels -->
             <div class="px-3 mb-2">
             <span class="block text-[11px] font-semibold tracking-widest uppercase text-gray-600 px-2 mb-2">Labels</span>
-            <ul class="space-y-0.5" id="sidebarLabels">
+            <ul class="space-y-0.5" id="sidebarTagLabels">
                 <li><button class="sidebar-item sidebar-label w-full" data-label="all">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                 <span class="text-gray-400">All Labels</span>
