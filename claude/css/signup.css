@@ -2,14 +2,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0e0e10;
-      --surface: #16161a;
-      --border: #2a2a30;
-      --border-focus: #4f6ef7;
-      --text: #e8e8ed;
-      --muted: #6b6b7a;
-      --accent: #4f6ef7;
-      --accent-hover: #3d5ce5;
+      --bg: #0b0d11;
+      --surface: #12151c;
+      --border: #1f2535;
+      --border-focus: #00e5c4;
+      --text: #e8ecf4;
+      --muted: #6b7591;
+      --accent: #00e5c4;
+      --accent-hover: #00d1b2;
       --error: #f75f5f;
       --success: #4fd18a;
       --input-bg: #1c1c22;
@@ -108,7 +108,7 @@
 
     .tagline em {
       font-style: normal;
-      background: linear-gradient(135deg, #4f6ef7, #a78bfa);
+      background: linear-gradient(135deg, var(--accent), #7c5cfc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -187,30 +187,14 @@
       margin-bottom: 18px;
     }
 
-    .label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
     label {
       display: block;
       font-size: 13px;
       font-weight: 500;
       color: #c4c4ce;
+      margin-bottom: 6px;
       letter-spacing: 0.01em;
     }
-
-    .forgot-link {
-      font-size: 13px;
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .forgot-link:hover { color: #7b96fa; }
 
     .input-wrap {
       position: relative;
@@ -243,11 +227,32 @@
       box-shadow: 0 0 0 3px rgba(247,95,95,0.12);
     }
 
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
     .err-msg {
       font-size: 12px;
       color: var(--error);
       margin-top: 5px;
       display: none;
+    }
+
+    /* password strength */
+    .strength-bar {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .strength-seg {
+      height: 3px;
+      flex: 1;
+      background: var(--border);
+      border-radius: 2px;
+      transition: background 0.3s;
     }
 
     /* toggle password */
@@ -271,7 +276,7 @@
     /* checkbox */
     .checkbox-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       margin-bottom: 20px;
     }
@@ -280,15 +285,24 @@
       width: 16px;
       height: 16px;
       accent-color: var(--accent);
+      margin-top: 2px;
       cursor: pointer;
       flex-shrink: 0;
     }
 
     .checkbox-row span {
       font-size: 13px;
-      color: var(--text);
+      color: var(--muted);
       line-height: 1.5;
     }
+
+    .checkbox-row a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .checkbox-row a:hover { color: #7b96fa; }
 
     /* ── BUTTONS ── */
     .btn-primary {
@@ -310,7 +324,7 @@
 
     .btn-primary:hover {
       background: var(--accent-hover);
-      box-shadow: 0 4px 20px rgba(79,110,247,0.35);
+      box-shadow: 0 4px 20px rgba(0, 229, 196, 0.35);
     }
 
     .btn-primary:active { transform: scale(0.98); }

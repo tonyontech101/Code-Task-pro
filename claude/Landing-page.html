@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeTask Pro — Developer Task Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#00d4c8" opacity="0.9"/>
+        <path d="M2 17l10 5 10-5" stroke="#8b5cf6" stroke-width="2" fill="none"/>
+        <path d="M2 12l10 5 10-5" stroke="#00d4c8" stroke-width="2" fill="none" opacity="0.6"/>
+      </svg>
+    </div>
+    <span class="nav-logo-text">CodeTask <span>Pro</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it Works</a></li>
+    <li><a href="#code">Developer</a></li>
+  </ul>
+  <div class="nav-cta">
+    <a class="btn-ghost" href="login-page.html">Sign in</a>
+    <a class="btn-primary" href="signup-page.html">Get Started Free →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    100% Free 
+  </div>
+
+  <h1 class="hero-title">
+    <span class="line1">Ship code.</span>
+    <span class="line2">Not chaos.</span>
+    <span class="line3">Task management for developers.</span>
+  </h1>
+
+  <p class="hero-sub">
+    CodeTask Pro is the developer-first dashboard to organize, prioritize, and track your coding tasks — with code previews, deadline tracking, and a dark interface built for long sessions.
+  </p>
+
+  <div class="hero-actions">
+    <a href="login-page.html" class="btn-primary-lg">
+      Login
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <a href="signup-page.html" class="btn-ghost-lg">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6.5C6.5 5.67 7.17 5 8 5s1.5.67 1.5 1.5c0 .83-.67 1.5-1.5 1.5v1.5M8 12v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      See features
+    </a>
+  </div>
+
+  <p class="hero-note">No credit card · No backend · Open source · <span>Free forever</span></p>
+</div>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="preview-section">
+  <div class="preview-wrap">
+    <div class="preview-topbar">
+      <div class="traffic-dot td-red"></div>
+      <div class="traffic-dot td-yellow"></div>
+      <div class="traffic-dot td-green"></div>
+      <div class="preview-url">127.0.0.1:5501/claude/index.html</div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-sidebar">
+        <div class="ps-logo">
+          <div class="ps-logo-icon"></div>
+          <span class="ps-logo-text">CodeTask Pro</span>
+        </div>
+        <div class="ps-section">
+          <div class="ps-label">Projects</div>
+          <div class="ps-item active"><span class="ps-item-dot" style="background:var(--cyan);border-color:var(--cyan)"></span>All Tasks</div>
+          <div class="ps-item"><span class="ps-item-dot"></span>Api v3</div>
+          <div class="ps-item"><span class="ps-item-dot"></span>Core v2.1</div>
+        </div>
+        <div class="ps-section">
+          <div class="ps-label">Priority</div>
+          <div class="ps-item"><span style="color:var(--urgent)">● </span>Urgent</div>
+          <div class="ps-item"><span style="color:var(--high)">● </span>High</div>
+          <div class="ps-item"><span style="color:var(--low)">● </span>Low</div>
+        </div>
+        <div class="ps-section">
+          <div class="ps-label">Labels</div>
+          <div class="ps-item">◇ WIP</div>
+          <div class="ps-item">◇ Backend</div>
+        </div>
+      </div>
+      <div class="preview-main">
+        <div class="pm-header">
+          <div class="pm-title">Active Tasks <span>(9)</span></div>
+          <button class="btn-new-task">+ New Task</button>
+        </div>
+        <div class="progress-bar-wrap">
+          <div>
+            <div class="progress-label">All Projects: 72% Complete</div>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+          </div>
+          <span class="progress-pct">72%</span>
+        </div>
+        <div class="task-table-head">
+          <div>Priority</div><div>Title</div><div>Deadline</div><div>Label</div>
+        </div>
+        <div class="task-row">
+          <div><span class="priority-badge p-urgent">Urgent</span></div>
+          <div><div class="task-title">Fix auth token refresh bug</div><div class="task-sub">Api v3 · Updated 2h ago</div></div>
+          <div class="task-deadline">Apr 28, 2026</div>
+          <div><span class="task-label">Backend</span></div>
+        </div>
+        <div class="task-row">
+          <div><span class="priority-badge p-high">High</span></div>
+          <div><div class="task-title">Implement rate limiting middleware</div><div class="task-sub">Core v2.1 · Updated 5h ago</div></div>
+          <div class="task-deadline">May 02, 2026</div>
+          <div><span class="task-label">WIP</span></div>
+        </div>
+        <div class="task-row">
+          <div><span class="priority-badge p-high">High</span></div>
+          <div><div class="task-title">Optimize DB query performance</div><div class="task-sub">Api v3 · Updated 1d ago</div></div>
+          <div class="task-deadline">May 05, 2026</div>
+          <div><span class="task-label">Backend</span></div>
+        </div>
+        <div class="task-row">
+          <div><span class="priority-badge p-low">Low</span></div>
+          <div><div class="task-title">Update API documentation</div><div class="task-sub">Api v3 · Updated 2d ago</div></div>
+          <div class="task-deadline">May 10, 2026</div>
+          <div><span class="task-label">WIP</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-tag">// Features</div>
+    <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
+    <p class="section-sub">Built specifically for developers who want to stay focused, not navigate bloated PM tools.</p>
+
+    <div class="features-grid reveal">
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
+        <div class="feat-title">Smart Task Management</div>
+        <div class="feat-desc">Create tasks with title, priority, deadline, and labels. Mark complete, delete, or drill into full detail panels with description, notes, and activity logs.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Progress Tracking</div>
+        <div class="feat-desc">See overall project completion at a glance. Active task counters and visual progress bars keep your momentum visible, not buried in reports.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🗂️</div>
+        <div class="feat-title">Priority & Labels</div>
+        <div class="feat-desc">Tag tasks as Urgent, High, or Low. Organize with custom labels like Backend, WIP, or anything your workflow needs. Filter by any combination.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <div class="feat-title">Fast Search</div>
+        <div class="feat-desc">Find any task or label in milliseconds using the global search bar. Keyboard-first design lets you navigate the whole app without reaching for the mouse.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💻</div>
+        <div class="feat-title">Code Previews in Tasks</div>
+        <div class="feat-desc">Paste code snippets directly into task detail panels. Never lose context — the relevant code lives right next to the task that needs it done.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Zero Backend</div>
+        <div class="feat-desc">Pure vanilla JS. No server, no database, no sign-up required. Just open the file and start working. Deploy anywhere, run everywhere, own your data.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="container">
+    <div class="stats-grid reveal">
+      <div class="stat-card">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Free — forever, no catch</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Backend dependencies</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">Tasks & projects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">1</div>
+        <div class="stat-label">HTML file to get started</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CODE SECTION -->
+<section class="code-section" id="code">
+  <div class="container">
+    <div class="code-grid">
+      <div class="reveal">
+        <div class="section-tag">// Developer-First</div>
+        <h2 class="section-title">Code lives<br>in the task.</h2>
+        <p class="section-sub" style="margin-bottom: 32px;">Paste relevant code directly into any task's detail panel. No switching between tools, no lost context.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
+            <span style="color:var(--cyan)">✓</span> Code syntax highlighting in task panels
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
+            <span style="color:var(--cyan)">✓</span> Tags and activity log per task
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
+            <span style="color:var(--cyan)">✓</span> JetBrains Mono throughout the UI
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
+            <span style="color:var(--cyan)">✓</span> Built with Tailwind + vanilla JS
+          </div>
+        </div>
+      </div>
+      <div class="code-block reveal">
+        <div class="code-topbar">
+          <div class="traffic-dot td-red"></div>
+          <div class="traffic-dot td-yellow"></div>
+          <div class="traffic-dot td-green"></div>
+          <span class="code-file">task-detail.js</span>
+        </div>
+        <div class="code-content">
+<span class="cmt">// Task detail panel — code snippet</span><br>
+<span class="kw">const</span> <span class="fn">createTask</span> = (<span class="prop">options</span>) => {<br>
+&nbsp;&nbsp;<span class="kw">const</span> <span class="prop">task</span> = {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">id</span>: <span class="fn">crypto</span>.<span class="fn">randomUUID</span>(),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">title</span>: <span class="prop">options</span>.<span class="prop">title</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">priority</span>: <span class="prop">options</span>.<span class="prop">priority</span> ?? <span class="str">'low'</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">deadline</span>: <span class="prop">options</span>.<span class="prop">deadline</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">labels</span>: <span class="prop">options</span>.<span class="prop">labels</span> ?? [],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">completed</span>: <span class="kw">false</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">code</span>: <span class="prop">options</span>.<span class="prop">code</span> ?? <span class="str">''</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">createdAt</span>: <span class="kw">new</span> <span class="fn">Date</span>().<span class="fn">toISOString</span>()<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="prop">tasks</span>.<span class="fn">push</span>(<span class="prop">task</span>)<br>
+&nbsp;&nbsp;<span class="fn">renderTaskList</span>()<br>
+&nbsp;&nbsp;<span class="kw">return</span> <span class="prop">task</span><br>
+}<br><br>
+<span class="cmt">// Activity log: auto-tracks who + when</span><br>
+<span class="fn">logActivity</span>(<span class="prop">task</span>.<span class="prop">id</span>, <span class="str">'Created task'</span>)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-tag">// How it works</div>
+    <h2 class="section-title">From zero to<br>organized in seconds.</h2>
+    <p class="section-sub">No account, no setup, no waiting. Just open and build.</p>
+    <div class="steps-grid reveal">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Open the dashboard</div>
+        <div class="step-desc">Download or clone the repo, open index.html in your browser. No server needed — it runs entirely in your browser with zero configuration.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Create your first task</div>
+        <div class="step-desc">Hit "+ New Task", fill in title, priority, deadline, and labels. Your task appears instantly in the active tasks table, ready to be worked on.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Ship without chaos</div>
+        <div class="step-desc">Track progress, drill into task details, paste code snippets, and mark tasks complete. Stay focused on what matters — building great software.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box reveal">
+      <div class="cta-free-badge">
+        <span>★</span> 100% Free · No Account Needed
+      </div>
+      <h2 class="cta-title">Start managing<br>tasks like a pro.</h2>
+      <p class="cta-sub">No signup. No backend. No credit card. Just a clean dark dashboard built for developers who want to stay in flow.</p>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+        <a href="index.html" class="btn-primary-lg">
+          Launch CodeTask Pro →
+        </a>
+        <a href="#" class="btn-ghost-lg">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    © 2026 <span>CodeTask Pro</span> · Built for developers
+  </div>
+  <ul class="footer-links">
+    <li><a href="#">GitHub</a></li>
+    <li><a href="#">Docs</a></li>
+    <li><a href="#">Changelog</a></li>
+    <li><a href="#">MIT License</a></li>
+  </ul>
+</footer>
+
+<script src="../js/landing.js"></script>
+</body>
+</html>
