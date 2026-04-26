@@ -67,7 +67,7 @@ const chatConversations = {
 // ═══════════════════════════════════════════════════════════════
 //  PAGE NAVIGATION (shared by rail buttons + sidebar projects)
 // ═══════════════════════════════════════════════════════════════
-const PAGE_IDS = ["pageDashboard", "pageProjects", "pageTeam", "pageInbox"];
+const PAGE_IDS = ["pageDashboard", "pageProjects", "pageTeam", "pageInbox", "pageNotes"];
 
 function navigateToPage(pageId) {
   activePageId = pageId;
@@ -99,6 +99,9 @@ function navigateToPage(pageId) {
     if (pageId === 'pageInbox') {
       defaultSidebar.classList.add('hidden');
       inboxSidebar.classList.remove('hidden');
+    } else if (pageId === 'pageNotes') {
+      defaultSidebar.classList.add('hidden');
+      inboxSidebar.classList.add('hidden');
     } else {
       defaultSidebar.classList.remove('hidden');
       inboxSidebar.classList.add('hidden');
@@ -786,10 +789,10 @@ function initSidebarPriority() {
 
 function initRailButtons() {
   const railBtns = document.querySelectorAll(".rail-btn");
-  const pageMap  = { 0: "pageDashboard", 1: "pageProjects", 2: "pageTeam", 4: "pageInbox" };
+  const pageMap  = { 0: "pageDashboard", 1: "pageProjects", 2: "pageTeam", 3: "pageNotes", 4: "pageInbox" };
 
   railBtns.forEach((btn, i) => {
-    if (i >= 5 || !pageMap[i]) return; // skip non-page buttons (Notes=3, Settings=5)
+    if (i >= 6 || !pageMap[i]) return; // skip non-page buttons (Settings=5)
     btn.addEventListener("click", () => {
       navigateToPage(pageMap[i]);
 
@@ -797,6 +800,7 @@ function initRailButtons() {
       if (pageMap[i] === "pageProjects") renderProjectsGrid();
       if (pageMap[i] === "pageTeam")     renderTeamGrid();
       if (pageMap[i] === "pageInbox")    { renderInbox(); renderSidebarChatList(); }
+      if (pageMap[i] === "pageNotes")    renderNotes();
 
       // Reset sidebar project highlight to "All Tasks" when going to Dashboard via rail
       if (pageMap[i] === "pageDashboard") {
@@ -1369,6 +1373,255 @@ function filterSidebarChats(query) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  NOTES SYSTEM
+// ═══════════════════════════════════════════════════════════════
+let notes = [
+  {
+    id: 1,
+    title: "Project Architecture v2",
+    content: "// Use a modular approach with Web Components\n// Integration with Firebase for auth\n// Tailwind for rapid UI development\n\n- Sidebar handles navigation\n- Main content area swaps components",
+    date: "2 hours ago",
+    color: "#00d4c8",
+    pinned: true,
+    scope: "team",
+    tags: ["architecture", "v2"]
+  },
+  {
+    id: 2,
+    title: "API Endpoint Ideas",
+    content: "GET /api/tasks - Fetch all tasks\nPOST /api/tasks - Create new task\nPATCH /api/tasks/:id - Update task\n\nNeed to implement rate limiting on all POST/PATCH endpoints.",
+    date: "Yesterday",
+    color: "#8b5cf6",
+    pinned: false,
+    scope: "personal",
+    tags: ["api", "backend"]
+  },
+  {
+    id: 3,
+    title: "UI/UX Feedback",
+    content: "The dark mode looks great but we need more contrast on the input borders. The cyan accent is perfect. Suggest adding glassmorphism to the modals.",
+    date: "2 days ago",
+    color: "#ef4444",
+    pinned: false,
+    scope: "team",
+    tags: ["design", "feedback"]
+  }
+];
+
+let currentNoteId = null;
+let notesFilter = "all";
+let notesSearchQuery = "";
+
+function renderNotes() {
+  const sidebarList = document.getElementById("notesSidebarList");
+  if (!sidebarList) return;
+
+  let filtered = notes;
+  
+  // Apply scope filter
+  if (notesFilter !== "all") {
+    filtered = filtered.filter(n => n.scope === notesFilter);
+  }
+  
+  // Apply search
+  if (notesSearchQuery) {
+    const q = notesSearchQuery.toLowerCase();
+    filtered = filtered.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
+  }
+
+  // Sort: Pinned first, then by date (simulated)
+  filtered.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return b.id - a.id;
+  });
+
+  if (filtered.length === 0) {
+    sidebarList.innerHTML = `
+      <div class="flex flex-col items-center justify-center py-10 text-center px-4">
+        <p class="text-[12px] text-gray-600 font-medium italic">No notes found</p>
+      </div>`;
+    return;
+  }
+
+  sidebarList.innerHTML = filtered.map(n => `
+    <div class="note-card group p-4 rounded-2xl mb-2 cursor-pointer transition-all border border-transparent ${n.id === currentNoteId ? 'bg-overlay border-white/5 ring-1 ring-white/5' : 'hover:bg-white/[0.02]'}" onclick="selectNote(${n.id})">
+      <div class="flex items-start justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full shadow-sm" style="background: ${n.color}"></div>
+          <h3 class="text-[13.5px] font-bold truncate max-w-[160px] ${n.id === currentNoteId ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'} transition-colors">${n.title || 'Untitled Note'}</h3>
+        </div>
+        <div class="flex items-center gap-1.5">
+          ${n.pinned ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" class="text-cyan"><path d="M21 10c-3 0-4-1-4-4s-1-4-4-4-4 1-4 4-1 4-4 4c0 3 1 4 4 4s4 1 4 4 1 4 4 4"/></svg>' : ''}
+          ${n.scope === 'team' ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-purple"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' : ''}
+        </div>
+      </div>
+      <p class="text-[11.5px] text-gray-600 line-clamp-2 leading-relaxed mb-2">${n.content || 'No content yet...'}</p>
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-bold text-gray-700 uppercase tracking-wider">${n.date}</span>
+        <div class="flex gap-1">
+          ${(n.tags || []).slice(0, 2).map(t => `<span class="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-600 font-bold uppercase">${t}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectNote(id) {
+  currentNoteId = id;
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+
+  // UI elements
+  const emptyState = document.getElementById("noteEditorEmpty");
+  const header = document.getElementById("noteEditorHeader");
+  const body = document.getElementById("noteEditorBody");
+  
+  if (emptyState) emptyState.classList.add("hidden");
+  if (header) header.classList.remove("hidden");
+  if (body) body.classList.remove("hidden");
+
+  // Populate editor
+  document.getElementById("noteTitleInput").value = note.title;
+  document.getElementById("noteContentInput").value = note.content;
+  document.getElementById("noteEditorDate").textContent = `Last edited: ${note.date}`;
+  
+  const scopeEl = document.getElementById("noteEditorScope");
+  scopeEl.textContent = note.scope === 'team' ? 'Team' : 'Personal';
+  scopeEl.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${note.scope === 'team' ? 'bg-purple/10 border-purple/20 text-purple' : 'bg-white/5 border-white/10 text-gray-500'}`;
+
+  const pinBtn = document.getElementById("notePinBtn");
+  pinBtn.className = `w-9 h-9 flex items-center justify-center rounded-xl border transition-all ${note.pinned ? 'bg-cyan/10 border-cyan/20 text-cyan' : 'bg-overlay border-white/5 text-gray-500 hover:text-cyan'}`;
+
+  const shareBtn = document.getElementById("noteShareBtn");
+  shareBtn.className = `w-9 h-9 flex items-center justify-center rounded-xl border transition-all ${note.scope === 'team' ? 'bg-purple/10 border-purple/20 text-purple' : 'bg-overlay border-white/5 text-gray-500 hover:text-purple'}`;
+
+  renderColorPicker(note.color);
+  renderNoteTags(note.tags);
+  renderNotes(); // Refresh sidebar to show active state
+}
+
+function renderColorPicker(activeColor) {
+  const container = document.getElementById("noteColorPicker");
+  if (!container) return;
+  const colors = ["#00d4c8", "#8b5cf6", "#ef4444", "#f59e0b", "#10b981", "#3b82f6"];
+  container.innerHTML = colors.map(c => `
+    <div class="w-3 h-3 rounded-full cursor-pointer transition-transform hover:scale-125 ${c === activeColor ? 'ring-2 ring-white/50 ring-offset-2 ring-offset-base scale-110' : ''}" style="background: ${c}" onclick="setNoteColor('${c}')"></div>
+  `).join('');
+}
+
+function renderNoteTags(tags) {
+  const container = document.getElementById("noteTags");
+  if (!container) return;
+  container.innerHTML = (tags || []).map(t => `
+    <span class="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-tight flex items-center gap-1.5">
+      ${t}
+      <button onclick="removeNoteTag('${t}')" class="hover:text-red-400">×</button>
+    </span>
+  `).join('') + `
+    <button class="w-5 h-5 flex items-center justify-center rounded bg-white/5 border border-white/5 text-gray-600 hover:text-cyan transition-colors" onclick="addNoteTag()">+</button>
+  `;
+}
+
+function addNote() {
+  const newNote = {
+    id: Date.now(),
+    title: "",
+    content: "",
+    date: "Just now",
+    color: "#00d4c8",
+    pinned: false,
+    scope: "personal",
+    tags: []
+  };
+  notes.unshift(newNote);
+  selectNote(newNote.id);
+  setTimeout(() => document.getElementById("noteTitleInput").focus(), 100);
+}
+
+function saveNote() {
+  const note = notes.find(n => n.id === currentNoteId);
+  if (!note) return;
+
+  note.title = document.getElementById("noteTitleInput").value;
+  note.content = document.getElementById("noteContentInput").value;
+  note.date = "Just now";
+  
+  document.getElementById("noteEditorDate").textContent = `Last edited: Just now`;
+  renderNotes(); // Update sidebar preview
+}
+
+function toggleNotePin() {
+  const note = notes.find(n => n.id === currentNoteId);
+  if (!note) return;
+  note.pinned = !note.pinned;
+  selectNote(note.id);
+}
+
+function toggleNoteScope() {
+  const note = notes.find(n => n.id === currentNoteId);
+  if (!note) return;
+  note.scope = note.scope === 'team' ? 'personal' : 'team';
+  selectNote(note.id);
+}
+
+function setNoteColor(color) {
+  const note = notes.find(n => n.id === currentNoteId);
+  if (!note) return;
+  note.color = color;
+  selectNote(note.id);
+}
+
+function deleteCurrentNote() {
+  if (!confirm("Are you sure you want to delete this note?")) return;
+  notes = notes.filter(n => n.id !== currentNoteId);
+  currentNoteId = null;
+  
+  // UI reset
+  document.getElementById("noteEditorEmpty").classList.remove("hidden");
+  document.getElementById("noteEditorHeader").classList.add("hidden");
+  document.getElementById("noteEditorBody").classList.add("hidden");
+  
+  renderNotes();
+}
+
+function setNotesFilter(filter) {
+  notesFilter = filter;
+  document.querySelectorAll(".note-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filter === filter);
+    btn.classList.toggle("text-gray-500", btn.dataset.filter !== filter);
+    btn.classList.toggle("hover:text-gray-300", btn.dataset.filter !== filter);
+  });
+  renderNotes();
+}
+
+function filterNotes(query) {
+  notesSearchQuery = query;
+  renderNotes();
+}
+
+function addNoteTag() {
+  const tag = prompt("Enter new tag:");
+  if (tag) {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (note && !note.tags.includes(tag.toLowerCase())) {
+      note.tags.push(tag.toLowerCase());
+      renderNoteTags(note.tags);
+      renderNotes();
+    }
+  }
+}
+
+function removeNoteTag(tag) {
+  const note = notes.find(n => n.id === currentNoteId);
+  if (note) {
+    note.tags = note.tags.filter(t => t !== tag);
+    renderNoteTags(note.tags);
+    renderNotes();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", () => {
@@ -1382,6 +1635,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks();
     renderProjectsGrid();
     renderTeamGrid();
+    renderNotes();
 
     // Set initial inbox badge
     const unreadCount = inboxItems.filter(n => !n.read).length;
