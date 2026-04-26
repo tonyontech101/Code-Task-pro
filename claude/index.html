@@ -124,6 +124,11 @@
             <app-notes-page style="display: contents;"></app-notes-page>
           </div>
 
+          <!-- ═══ PAGE: Settings ═══ -->
+          <div id="pageSettings" class="flex flex-1 overflow-hidden hidden">
+            <app-settings-page style="display: contents;"></app-settings-page>
+          </div>
+
       </div><!-- /content -->
     </div><!-- /main area -->
   </div><!-- /app shell -->
@@ -235,6 +240,21 @@
     </div>
   </div>
 
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModalBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center" onclick="closeLogoutModalOnBackdrop(event)">
+    <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-[340px] p-6 text-center" onclick="event.stopPropagation()">
+      <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <h3 class="text-[18px] font-bold text-gray-100 mb-2">Confirm Logout</h3>
+      <p class="text-[14px] text-gray-500 mb-6">Are you sure you want to log out of your account?</p>
+      <div class="flex flex-col gap-2">
+        <button class="w-full py-3 bg-red-500 hover:bg-red-600 text-white text-[14px] font-bold rounded-xl transition-colors shadow-lg shadow-red-500/20" onclick="logout()">Logout</button>
+        <button class="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-400 text-[14px] font-medium rounded-xl transition-colors" onclick="closeLogoutModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="components/sidebar.js"></script>
   <script src="components/header.js"></script>
   <script src="components/task-area.js"></script>
@@ -243,6 +263,7 @@
   <script src="components/inbox-page.js"></script>
 
   <script src="components/notes-page.js"></script>
+  <script src="components/settings-page.js"></script>
 
   <script src="../js/app.js"></script>
 </body>

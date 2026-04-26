@@ -18,7 +18,7 @@ class AppHeader extends HTMLElement {
           <kbd class="text-[10px] text-gray-600 bg-overlay border border-white/10 rounded px-1.5 py-0.5 font-mono">\u2318K</kbd>
         </div>
 
-        <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+        <div class="flex items-center gap-2 ml-auto flex-shrink-0 cursor-pointer hover:opacity-80 transition-all" onclick="navigateToPage('pageSettings'); setSettingsTab('profile');">
           <div id="userAvatar" class="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[11px] font-bold text-white">—</div>
           <span id="userName" class="text-[13.5px] font-medium text-gray-400">Loading...</span>
         </div>

@@ -67,7 +67,7 @@ const chatConversations = {
 // ═══════════════════════════════════════════════════════════════
 //  PAGE NAVIGATION (shared by rail buttons + sidebar projects)
 // ═══════════════════════════════════════════════════════════════
-const PAGE_IDS = ["pageDashboard", "pageProjects", "pageTeam", "pageInbox", "pageNotes"];
+const PAGE_IDS = ["pageDashboard", "pageProjects", "pageTeam", "pageNotes", "pageInbox", "pageSettings"];
 
 function navigateToPage(pageId) {
   activePageId = pageId;
@@ -82,14 +82,11 @@ function navigateToPage(pageId) {
   const target = document.getElementById(pageId);
   if (target) target.classList.remove("hidden");
 
-  // Sync rail buttons (0=Dashboard, 1=Projects, 2=Team, 4=Inbox)
+  // Sync rail buttons (0=Dashboard, 1=Projects, 2=Team, 3=Notes, 4=Inbox, 5=Settings)
   const railIndex = PAGE_IDS.indexOf(pageId);
   const railBtns  = document.querySelectorAll(".rail-btn");
   railBtns.forEach(b => b.classList.remove("active"));
-  // Map page index to actual rail button index
-  const railMap = { 0: 0, 1: 1, 2: 2, 3: 4 };
-  const actualRailIdx = railMap[railIndex];
-  if (actualRailIdx !== undefined && railBtns[actualRailIdx]) railBtns[actualRailIdx].classList.add("active");
+  if (railIndex !== -1 && railBtns[railIndex]) railBtns[railIndex].classList.add("active");
 
   // Toggle default sidebar vs inbox sidebar
   const defaultSidebar = document.getElementById('sidebarDefaultPanel');
@@ -99,7 +96,7 @@ function navigateToPage(pageId) {
     if (pageId === 'pageInbox') {
       defaultSidebar.classList.add('hidden');
       inboxSidebar.classList.remove('hidden');
-    } else if (pageId === 'pageNotes') {
+    } else if (pageId === 'pageNotes' || pageId === 'pageSettings') {
       defaultSidebar.classList.add('hidden');
       inboxSidebar.classList.add('hidden');
     } else {
@@ -366,21 +363,46 @@ function showDetailPanel(id) {
   if (!panel || !t) return;
 
   panel.classList.remove("hidden");
-  document.getElementById("detailTitle").textContent = t.title;
-  document.getElementById("detailDesc").textContent  = t.desc || "No description.";
-  document.getElementById("detailNotes").textContent  = t.notes || "—";
-  document.getElementById("detailCode").textContent   = t.code || "// no code snippet";
+  
+  // Status Header
+  const statusEl = document.getElementById("detailStatus");
+  if (statusEl) {
+    statusEl.textContent = t.done ? "Completed Task" : "Active Task";
+    statusEl.className = t.done 
+      ? "text-[10px] font-bold uppercase tracking-widest text-green-500 opacity-80 mb-1"
+      : "text-[10px] font-bold uppercase tracking-widest text-cyan opacity-80 mb-1";
+  }
 
+  document.getElementById("detailTitle").textContent = t.title;
+  document.getElementById("detailDesc").textContent  = t.desc || "No description provided for this task.";
+  document.getElementById("detailNotes").textContent  = t.notes || "No strategic notes available.";
+  document.getElementById("detailCode").textContent   = t.code || "// No logic implementation snippet available.";
+
+  // Metadata
+  const prioEl = document.getElementById("detailPriority");
+  if (prioEl) {
+    prioEl.textContent = t.priority.charAt(0).toUpperCase() + t.priority.slice(1);
+    prioEl.className = `text-[12px] font-bold badge-${t.priority}`;
+  }
+
+  const deadEl = document.getElementById("detailDeadline");
+  if (deadEl) {
+    deadEl.textContent = t.deadline || "No deadline set";
+    deadEl.className = "text-[12px] font-bold text-gray-300";
+  }
+
+  // Tags
   document.getElementById("detailTags").innerHTML = (t.tags || []).map(tag =>
     `<span class="badge badge-wip">${tag}</span>`
   ).join("");
 
-  document.getElementById("detailActivity").innerHTML = (t.activity || []).map(a => `
-    <div class="flex items-start gap-2">
-      <div class="w-1.5 h-1.5 rounded-full bg-cyan mt-1.5 flex-shrink-0"></div>
-      <div>
-        <p class="text-[12.5px] text-gray-300">${a.text}</p>
-        <p class="text-[11px] text-gray-600">${a.time}</p>
+  // Timeline Activity
+  document.getElementById("detailActivity").innerHTML = (t.activity || []).map((a, i) => `
+    <div class="flex items-start gap-3 relative z-10">
+      <div class="w-3.5 h-3.5 rounded-full ${i === 0 ? 'bg-cyan' : 'bg-elevated'} border-2 border-surface flex-shrink-0 mt-0.5"></div>
+      <div class="flex flex-col gap-0.5">
+        <p class="text-[12.5px] ${i === 0 ? 'text-gray-100 font-medium' : 'text-gray-400'} leading-tight">${a.text}</p>
+        <p class="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">${a.time}</p>
       </div>
     </div>
   `).join("");
@@ -393,14 +415,127 @@ function closeDetailPanel() {
   renderTasks();
 }
 
+async function copyDetailCode(btn) {
+  const code = document.getElementById("detailCode")?.textContent;
+  if (!code || code === "// No logic implementation snippet available.") return;
+
+  try {
+    await navigator.clipboard.writeText(code);
+    const originalInner = btn.innerHTML;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"/></svg>`;
+    setTimeout(() => { btn.innerHTML = originalInner; }, 2000);
+  } catch (err) {
+    console.error("Failed to copy:", err);
+  }
+}
+
+function sendContactForm() {
+  const name    = document.getElementById("contactName").value.trim();
+  const email   = document.getElementById("contactEmail").value.trim();
+  const subject = document.getElementById("contactSubject").value.trim();
+  const message = document.getElementById("contactMessage").value.trim();
+
+  if (!name || !email || !subject || !message) {
+    return alert("Please fill in all fields.");
+  }
+
+  // Mock send
+  console.log("Contact Form Submission:", { name, email, subject, message });
+  
+  // Show success feedback
+  alert(`Thank you, ${name}! Your message regarding "${subject}" has been sent (mock).`);
+
+  // Clear fields
+  document.getElementById("contactName").value = "";
+  document.getElementById("contactEmail").value = "";
+  document.getElementById("contactSubject").value = "";
+  document.getElementById("contactMessage").value = "";
+}
+
 function editTask() {
-  if (selectedTaskId) alert("Edit functionality coming soon!");
+  const t = tasks.find(x => x.id === selectedTaskId);
+  if (!t) return;
+
+  // Pre-fill modal fields
+  document.getElementById("newTaskTitle").value    = t.title;
+  document.getElementById("newTaskMeta").value     = t.desc || "";
+  document.getElementById("newTaskPriority").value = t.priority;
+  document.getElementById("newTaskLabel").value    = t.label;
+  document.getElementById("newTaskDeadline").value = t.deadline === "—" ? "" : t.deadline;
+  document.getElementById("newTaskNotes").value    = t.notes || "";
+  document.getElementById("newTaskCode").value     = t.code || "";
+  
+  // Populate project selector
+  const sel = document.getElementById("newTaskProject");
+  if (sel) {
+    sel.innerHTML = projects.map(p =>
+      `<option value="${p.name}" ${p.name === t.project ? 'selected' : ''}>${p.name}</option>`
+    ).join("");
+  }
+
+  // Update modal header and button
+  document.getElementById("taskModalTitle").textContent = "Edit Task";
+  const submitBtn = document.getElementById("taskModalSubmit");
+  submitBtn.textContent = "Save Changes";
+  submitBtn.onclick = updateTask;
+
+  // Show modal
+  document.getElementById("modalBackdrop").classList.remove("hidden");
+}
+
+function updateTask() {
+  const t = tasks.find(x => x.id === selectedTaskId);
+  if (!t) return;
+
+  const title    = document.getElementById("newTaskTitle").value.trim();
+  const meta     = document.getElementById("newTaskMeta").value.trim();
+  const priority = document.getElementById("newTaskPriority").value;
+  const label    = document.getElementById("newTaskLabel").value;
+  const deadline = document.getElementById("newTaskDeadline").value.trim();
+  const project  = document.getElementById("newTaskProject").value;
+  const notes    = document.getElementById("newTaskNotes").value.trim();
+  const code     = document.getElementById("newTaskCode").value.trim();
+
+  if (!title) return alert("Please enter a task title.");
+
+  // Update task object
+  t.title    = title;
+  t.desc     = meta;
+  t.priority = priority;
+  t.label    = label;
+  t.deadline = deadline || "—";
+  t.project  = project;
+  t.notes    = notes;
+  t.code     = code;
+  t.tags     = [label]; // Sync labels to tags
+  
+  // Add activity log
+  if (!t.activity) t.activity = [];
+  t.activity.unshift({ text: "Task updated", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+
+  // Close and refresh
+  closeNewTaskModal();
+  renderTasks();
+  showDetailPanel(t.id); // Refresh the panel
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  NEW TASK MODAL
 // ═══════════════════════════════════════════════════════════════
 function openNewTaskModal() {
+  // Reset modal header and button
+  document.getElementById("taskModalTitle").textContent = "New Task";
+  const submitBtn = document.getElementById("taskModalSubmit");
+  submitBtn.textContent = "Create Task";
+  submitBtn.onclick = addNewTask;
+
+  // Clear fields
+  document.getElementById("newTaskTitle").value    = "";
+  document.getElementById("newTaskMeta").value     = "";
+  document.getElementById("newTaskDeadline").value = "";
+  document.getElementById("newTaskNotes").value    = "";
+  document.getElementById("newTaskCode").value     = "";
+
   // Populate project selector dynamically
   const sel = document.getElementById("newTaskProject");
   if (sel) {
@@ -425,6 +560,8 @@ function addNewTask() {
   const priority = document.getElementById("newTaskPriority").value;
   const label    = document.getElementById("newTaskLabel").value;
   const deadline = document.getElementById("newTaskDeadline").value.trim();
+  const notes    = document.getElementById("newTaskNotes").value.trim();
+  const code     = document.getElementById("newTaskCode").value.trim();
   const project  = document.getElementById("newTaskProject")?.value
                  || (currentProject !== "all" ? currentProject : projects[0]?.name || "Unassigned");
 
@@ -439,8 +576,8 @@ function addNewTask() {
     project,
     done: false,
     desc: meta || "",
-    notes: "",
-    code: "",
+    notes: notes || "",
+    code: code || "",
     tags: [label],
     activity: [{ text: "Just created", time: "now" }]
   });
@@ -449,6 +586,8 @@ function addNewTask() {
   document.getElementById("newTaskTitle").value    = "";
   document.getElementById("newTaskMeta").value     = "";
   document.getElementById("newTaskDeadline").value = "";
+  document.getElementById("newTaskNotes").value    = "";
+  document.getElementById("newTaskCode").value     = "";
 
   closeNewTaskModal();
   renderTasks();
@@ -599,6 +738,21 @@ function closeNewMemberModal() {
 
 function closeMemberModalOnBackdrop(e) {
   if (e.target === e.currentTarget) closeNewMemberModal();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LOGOUT MODAL
+// ═══════════════════════════════════════════════════════════════
+function openLogoutModal() {
+  document.getElementById("logoutModalBackdrop").classList.remove("hidden");
+}
+
+function closeLogoutModal() {
+  document.getElementById("logoutModalBackdrop").classList.add("hidden");
+}
+
+function closeLogoutModalOnBackdrop(e) {
+  if (e.target === e.currentTarget) closeLogoutModal();
 }
 
 function addNewMember() {
@@ -789,7 +943,7 @@ function initSidebarPriority() {
 
 function initRailButtons() {
   const railBtns = document.querySelectorAll(".rail-btn");
-  const pageMap  = { 0: "pageDashboard", 1: "pageProjects", 2: "pageTeam", 3: "pageNotes", 4: "pageInbox" };
+  const pageMap  = { 0: "pageDashboard", 1: "pageProjects", 2: "pageTeam", 3: "pageNotes", 4: "pageInbox", 5: "pageSettings" };
 
   railBtns.forEach((btn, i) => {
     if (i >= 6 || !pageMap[i]) return; // skip non-page buttons (Settings=5)
@@ -1619,6 +1773,21 @@ function removeNoteTag(tag) {
     renderNoteTags(note.tags);
     renderNotes();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SETTINGS SYSTEM
+// ═══════════════════════════════════════════════════════════════
+function setSettingsTab(tabId) {
+  // Update nav buttons
+  document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+
+  // Update content sections
+  document.querySelectorAll('.settings-section').forEach(section => {
+    section.classList.toggle('hidden', section.id !== `settings-${tabId}`);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
