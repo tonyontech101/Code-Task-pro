@@ -2,42 +2,14 @@
  * state.js - Centralized state management for CodeTask Pro
  */
 
+// Notes no longer seeded from static dummy data; Firestore provides real records.
+
 export const state = {
   projects: [],
   tasks: [],
   members: [],
-  notes: [
-    {
-      id: 1,
-      title: "Project Architecture v2",
-      content: "// Use a modular approach with Web Components\n// Integration with Firebase for auth\n// Tailwind for rapid UI development\n\n- Sidebar handles navigation\n- Main content area swaps components",
-      date: "2 hours ago",
-      color: "#00d4c8",
-      pinned: true,
-      scope: "team",
-      tags: ["architecture", "v2"]
-    },
-    {
-      id: 2,
-      title: "API Endpoint Ideas",
-      content: "GET /api/tasks - Fetch all tasks\nPOST /api/tasks - Create new task\nPATCH /api/tasks/:id - Update task\n\nNeed to implement rate limiting on all POST/PATCH endpoints.",
-      date: "Yesterday",
-      color: "#8b5cf6",
-      pinned: false,
-      scope: "personal",
-      tags: ["api", "backend"]
-    },
-    {
-      id: 3,
-      title: "UI/UX Feedback",
-      content: "The dark mode looks great but we need more contrast on the input borders. The cyan accent is perfect. Suggest adding glassmorphism to the modals.",
-      date: "2 days ago",
-      color: "#ef4444",
-      pinned: false,
-      scope: "team",
-      tags: ["design", "feedback"]
-    }
-  ],
+  pendingInvitations: [],
+  notes: [],
   
   // UI State
   selectedTaskId: null,
