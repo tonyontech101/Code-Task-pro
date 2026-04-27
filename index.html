@@ -220,6 +220,7 @@
         <input id="newMemberEmail" type="text" placeholder="Email address..." class="modal-input" />
         <div class="flex gap-3">
           <select id="newMemberRole" class="modal-input flex-1">
+            <option value="LeadDev">Lead Developer</option>
             <option value="Developer">Developer</option>
             <option value="Designer">Designer</option>
             <option value="PM">Project Manager</option>
@@ -255,16 +256,9 @@
     </div>
   </div>
 
-  <script src="components/sidebar.js"></script>
-  <script src="components/header.js"></script>
-  <script src="components/task-area.js"></script>
-  <script src="components/detail-panel.js"></script>
-  <script src="components/task-modal.js"></script>
-  <script src="components/inbox-page.js"></script>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed top-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
-  <script src="components/notes-page.js"></script>
-  <script src="components/settings-page.js"></script>
-
-  <script src="../js/app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

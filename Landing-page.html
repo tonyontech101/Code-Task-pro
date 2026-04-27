@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
+  <div id="mouseGlow"></div>
 
 <!-- NAV -->
 <nav>
@@ -49,7 +50,7 @@
   </h1>
 
   <p class="hero-sub">
-    CodeTask Pro is the developer-first dashboard to organize, prioritize, and track your coding tasks — with code previews, deadline tracking, and a dark interface built for long sessions.
+    CodeTask Pro is the modular, collaborative dashboard built for engineers. Manage tasks with integrated chat, strategic notes, and logic implementation — all wrapped in a premium glassmorphic interface.
   </p>
 
   <div class="hero-actions">
@@ -73,7 +74,7 @@
       <div class="traffic-dot td-red"></div>
       <div class="traffic-dot td-yellow"></div>
       <div class="traffic-dot td-green"></div>
-      <div class="preview-url">127.0.0.1:5501/claude/index.html</div>
+      <div class="preview-url">127.0.0.1:5173/index.html</div>
     </div>
     <div class="preview-body">
       <div class="preview-sidebar">
@@ -144,49 +145,49 @@
 </div>
 
 <!-- FEATURES -->
-<section class="features" id="features">
+<section class="features reveal" id="features">
   <div class="container">
     <div class="section-tag">// Features</div>
     <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
     <p class="section-sub">Built specifically for developers who want to stay focused, not navigate bloated PM tools.</p>
 
-    <div class="features-grid reveal">
+    <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon">📋</div>
-        <div class="feat-title">Smart Task Management</div>
-        <div class="feat-desc">Create tasks with title, priority, deadline, and labels. Mark complete, delete, or drill into full detail panels with description, notes, and activity logs.</div>
+        <div class="feat-title">Modular Dashboard</div>
+        <div class="feat-desc">High-fidelity task management with priorities, labels, and real-time status tracking. Drill into deep detail panels for every task.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💬</div>
+        <div class="feat-title">Teammate Messaging</div>
+        <div class="feat-desc">Integrated chat system with unread badges, message previews, and real-time teammate status indicators for seamless coordination.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📓</div>
+        <div class="feat-title">Strategic Notes</div>
+        <div class="feat-desc">Premium glassmorphic notes with category tagging, pinning, and personal/team scoping for documentation that stays in flow.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📊</div>
-        <div class="feat-title">Progress Tracking</div>
-        <div class="feat-desc">See overall project completion at a glance. Active task counters and visual progress bars keep your momentum visible, not buried in reports.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🗂️</div>
-        <div class="feat-title">Priority & Labels</div>
-        <div class="feat-desc">Tag tasks as Urgent, High, or Low. Organize with custom labels like Backend, WIP, or anything your workflow needs. Filter by any combination.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🔍</div>
-        <div class="feat-title">Fast Search</div>
-        <div class="feat-desc">Find any task or label in milliseconds using the global search bar. Keyboard-first design lets you navigate the whole app without reaching for the mouse.</div>
+        <div class="feat-title">Project Analytics</div>
+        <div class="feat-desc">Visual progress tracking across multiple projects. Assign team members and monitor development timelines at a glance.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">💻</div>
-        <div class="feat-title">Code Previews in Tasks</div>
-        <div class="feat-desc">Paste code snippets directly into task detail panels. Never lose context — the relevant code lives right next to the task that needs it done.</div>
+        <div class="feat-title">Logic Implementation</div>
+        <div class="feat-desc">Architect your tasks with strategy notes and code snippets. Keep implementation logic right where the execution happens.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">⚡</div>
-        <div class="feat-title">Zero Backend</div>
-        <div class="feat-desc">Pure vanilla JS. No server, no database, no sign-up required. Just open the file and start working. Deploy anywhere, run everywhere, own your data.</div>
+        <div class="feat-icon">✨</div>
+        <div class="feat-title">Premium UI/UX</div>
+        <div class="feat-desc">A state-of-the-art glassmorphic interface designed specifically for long developer sessions. Dark mode by default, performance by design.</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- STATS -->
-<section class="stats">
+<section class="stats reveal">
   <div class="container">
     <div class="stats-grid reveal">
       <div class="stat-card">
@@ -210,7 +211,7 @@
 </section>
 
 <!-- CODE SECTION -->
-<section class="code-section" id="code">
+<section class="code-section reveal" id="code">
   <div class="container">
     <div class="code-grid">
       <div class="reveal">
@@ -265,7 +266,7 @@
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="how-section" id="how">
+<section class="how-section reveal" id="how">
   <div class="container">
     <div class="section-tag">// How it works</div>
     <h2 class="section-title">From zero to<br>organized in seconds.</h2>
@@ -273,32 +274,32 @@
     <div class="steps-grid reveal">
       <div class="step-card">
         <div class="step-num">01</div>
-        <div class="step-title">Open the dashboard</div>
-        <div class="step-desc">Download or clone the repo, open index.html in your browser. No server needed — it runs entirely in your browser with zero configuration.</div>
+        <div class="step-title">Organize</div>
+        <div class="step-desc">Structure your workspace into projects and invite your development team. Get a 360° view of your engineering roadmap instantly.</div>
       </div>
       <div class="step-card">
         <div class="step-num">02</div>
-        <div class="step-title">Create your first task</div>
-        <div class="step-desc">Hit "+ New Task", fill in title, priority, deadline, and labels. Your task appears instantly in the active tasks table, ready to be worked on.</div>
+        <div class="step-title">Architect</div>
+        <div class="step-desc">Break down complex tasks into implementation logic and code snippets. Document every decision in your strategic notes.</div>
       </div>
       <div class="step-card">
         <div class="step-num">03</div>
-        <div class="step-title">Ship without chaos</div>
-        <div class="step-desc">Track progress, drill into task details, paste code snippets, and mark tasks complete. Stay focused on what matters — building great software.</div>
+        <div class="step-title">Sync & Ship</div>
+        <div class="step-desc">Coordinate in real-time with teammate chat and shared documentation. Hit your deadlines with a focused, glassmorphic dashboard.</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- CTA -->
-<section class="cta-section">
+<section class="cta-section reveal">
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-free-badge">
         <span>★</span> 100% Free · No Account Needed
       </div>
-      <h2 class="cta-title">Start managing<br>tasks like a pro.</h2>
-      <p class="cta-sub">No signup. No backend. No credit card. Just a clean dark dashboard built for developers who want to stay in flow.</p>
+      <h2 class="cta-title">Start shipping<br>code like a pro.</h2>
+      <p class="cta-sub">Join thousands of developers using CodeTask Pro to organize their workflow, architect their logic, and sync with their teams in a premium dark environment.</p>
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
         <a href="index.html" class="btn-primary-lg">
           Launch CodeTask Pro →
@@ -324,6 +325,6 @@
   </ul>
 </footer>
 
-<script src="../js/landing.js"></script>
+<script src="js/landing.js"></script>
 </body>
 </html>

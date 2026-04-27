@@ -1,0 +1,25 @@
+{
+  "name": "codetask",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wonderwallyuz/Code-Task-pro.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wonderwallyuz/Code-Task-pro/issues"
+  },
+  "homepage": "https://github.com/wonderwallyuz/Code-Task-pro#readme",
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}

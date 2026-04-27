@@ -21,6 +21,18 @@
 
   html { scroll-behavior: smooth; }
 
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   body {
     font-family: 'Syne', sans-serif;
     background: var(--bg);
@@ -53,6 +65,20 @@
     z-index: 0;
   }
 
+  /* MOUSE GLOW */
+  #mouseGlow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,229,196,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+    mix-blend-mode: screen;
+  }
+
   /* NAV */
   nav {
     position: fixed;
@@ -62,9 +88,17 @@
     align-items: center;
     justify-content: space-between;
     padding: 18px 48px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    background: rgba(11,13,17,0.7);
+    backdrop-filter: blur(24px);
+    transition: all 0.3s ease;
+  }
+
+  nav.scrolled {
+    padding: 12px 48px;
     background: rgba(11,13,17,0.85);
-    backdrop-filter: blur(20px);
+    border-color: rgba(0,229,196,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
 
   .nav-logo {
@@ -228,7 +262,7 @@
   }
 
   .hero-title .line1 { display: block; color: var(--text); }
-  .hero-title .line2 { display: block; color: var(--cyan); }
+  .hero-title .line2 { display: block; color: var(--cyan); min-height: 1.1em; }
   .hero-title .line3 { display: block; color: var(--muted); font-weight: 600; font-size: 0.65em; letter-spacing: -1px; }
 
   .hero-sub {
