@@ -8,6 +8,7 @@ import { initializeApp }
 import {
   getAuth,
   createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
   signInWithEmailAndPassword,
   updateProfile,
   signInWithPopup,
@@ -15,6 +16,31 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 // ── Firebase Config ──────────────────────────────────────────
 const firebaseConfig = {
@@ -29,11 +55,33 @@ const firebaseConfig = {
 // ── Initialise Firebase (once) ───────────────────────────────
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 // ── ES Module exports (for auth-guard.js etc.) ───────────────
 export {
   auth,
+  db,
+  storage,
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  updateProfile,
   provider,
   onAuthStateChanged,
   signOut
@@ -42,6 +90,7 @@ export {
 // ── Window globals (for non-module scripts: login.js, signup.js) ─
 window.auth = auth;
 window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+window.fetchSignInMethodsForEmail     = fetchSignInMethodsForEmail;
 window.signInWithEmailAndPassword     = signInWithEmailAndPassword;
 window.updateProfile                  = updateProfile;
 

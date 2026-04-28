@@ -2,18 +2,23 @@
  * dashboard-controller.js - Logic for the main dashboard (tasks)
  */
 
-import { state } from '../modules/state.js';
-import { navigateToPage } from '../modules/navigation.js';
-import { showToast } from '../modules/utils.js';
+import { state } from "../modules/state.js";
+import { navigateToPage } from "../modules/navigation.js";
+import { showToast } from "../modules/utils.js";
+import {
+  createTaskRecord,
+  deleteTaskRecord,
+  updateTaskRecord
+} from "../modules/data-store.js";
 
 export function renderTasks() {
   const tbody = document.getElementById("taskBody");
   if (!tbody) return;
 
-  const filtered = state.tasks.filter(t => {
-    const projMatch     = state.currentProject  === "all" || t.project  === state.currentProject;
-    const labelMatch    = state.currentLabel    === "all" || t.label    === state.currentLabel;
-    const priorityMatch = state.currentPriority === "all" || t.priority === state.currentPriority;
+  const filtered = state.tasks.filter((task) => {
+    const projMatch = state.currentProject === "all" || task.project === state.currentProject;
+    const labelMatch = state.currentLabel === "all" || task.label === state.currentLabel;
+    const priorityMatch = state.currentPriority === "all" || task.priority === state.currentPriority;
     return projMatch && labelMatch && priorityMatch;
   });
 
@@ -29,17 +34,17 @@ export function renderTasks() {
         </td>
       </tr>`;
   } else {
-    tbody.innerHTML = filtered.map(t => `
-      <tr class="${t.id === state.selectedTaskId ? 'selected' : ''}" onclick="window.selectTask(${t.id})">
+    tbody.innerHTML = filtered.map((task) => `
+      <tr class="${task.id === state.selectedTaskId ? "selected" : ""}" onclick="window.selectTask('${task.id}')">
         <td>
-          <div class="task-cb ${t.done ? 'checked' : ''}" onclick="event.stopPropagation(); window.toggleTask(${t.id})"></div>
+          <div class="task-cb ${task.done ? "checked" : ""}" onclick="event.stopPropagation(); window.toggleTask('${task.id}')"></div>
         </td>
-        <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
-        <td class="text-[13.5px] ${t.done ? 'line-through text-gray-600' : 'text-gray-200'} font-medium">${t.title}</td>
-        <td class="text-[13px] text-gray-500 font-mono">${t.deadline}</td>
-        <td><span class="badge badge-${t.label}">${t.label}</span></td>
+        <td><span class="badge badge-${task.priority}">${task.priority}</span></td>
+        <td class="text-[13.5px] ${task.done ? "line-through text-gray-600" : "text-gray-200"} font-medium">${task.title}</td>
+        <td class="text-[13px] text-gray-500 font-mono">${task.deadline}</td>
+        <td><span class="badge badge-${task.label}">${task.label}</span></td>
         <td>
-          <button class="icon-btn" onclick="event.stopPropagation(); window.deleteTask(${t.id})" title="Delete">
+          <button class="icon-btn" onclick="event.stopPropagation(); window.deleteTask('${task.id}')" title="Delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </td>
@@ -47,7 +52,6 @@ export function renderTasks() {
     `).join("");
   }
 
-  // Update headers and progress
   updateDashboardMeta(filtered);
 }
 
@@ -62,34 +66,52 @@ function updateDashboardMeta(filtered) {
     subtitle.textContent = state.currentProject === "all" ? "All Projects" : `Project: ${state.currentProject}`;
   }
 
-  const done  = filtered.filter(t => t.done).length;
-  const pct   = filtered.length ? Math.round((done / filtered.length) * 100) : 0;
-  const bar   = document.getElementById("progressBar");
+  const done = filtered.filter((task) => task.done).length;
+  const pct = filtered.length ? Math.round((done / filtered.length) * 100) : 0;
+  const bar = document.getElementById("progressBar");
   const label = document.getElementById("progressLabel");
-  const perc  = document.getElementById("progressPercent");
-  if (bar)   bar.style.width = pct + "%";
+  const perc = document.getElementById("progressPercent");
+  if (bar) bar.style.width = `${pct}%`;
   if (label) label.textContent = `${state.currentProject === "all" ? "All Projects" : state.currentProject}: ${pct}% Complete`;
-  if (perc)  perc.textContent  = pct + "%";
+  if (perc) perc.textContent = `${pct}%`;
 }
 
-export function toggleTask(id) {
-  const t = state.tasks.find(x => x.id === id);
-  if (t) { 
-    t.done = !t.done; 
-    renderTasks(); 
+export async function toggleTask(id) {
+  const task = state.tasks.find((item) => item.id === id);
+  if (!task) return;
+
+  const nextDone = !task.done;
+  const nextActivity = [
+    { text: nextDone ? "Marked complete" : "Marked active", time: "now" },
+    ...(task.activity || [])
+  ];
+
+  try {
+    await updateTaskRecord(id, {
+      done: nextDone,
+      activity: nextActivity
+    });
+
+    task.done = nextDone;
+    task.activity = nextActivity;
+    renderTasks();
+  } catch (err) {
+    showToast("Failed to update task", "error");
+    console.error(err);
   }
 }
 
-export function deleteTask(id) {
+export async function deleteTask(id) {
   try {
-    const idx = state.tasks.findIndex(x => x.id === id);
-    if (idx !== -1) {
-      const task = state.tasks[idx];
-      state.tasks.splice(idx, 1);
-      if (state.selectedTaskId === id) window.closeDetailPanel();
-      renderTasks();
-      showToast(`Task "${task.title}" deleted`);
-    }
+    const idx = state.tasks.findIndex((item) => item.id === id);
+    if (idx === -1) return;
+
+    const task = state.tasks[idx];
+    await deleteTaskRecord(id);
+    state.tasks.splice(idx, 1);
+    if (state.selectedTaskId === id) window.closeDetailPanel();
+    renderTasks();
+    showToast(`Task "${task.title}" deleted`);
   } catch (err) {
     showToast("Failed to delete task", "error");
     console.error(err);
@@ -106,9 +128,9 @@ export function renderSidebarProjects() {
   const list = document.getElementById("sidebarProjects");
   if (!list) return;
 
-  let projectsHtml = state.projects.map(p => `
-    <li><button class="sidebar-item sidebar-project w-full" data-project="${p.name}">
-      <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${p.color}"></span>${p.name}
+  let projectsHtml = state.projects.map((project) => `
+    <li><button class="sidebar-item sidebar-project w-full" data-project="${project.name}">
+      <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${project.color}"></span>${project.name}
     </button></li>
   `).join("");
 
@@ -128,13 +150,11 @@ export function renderSidebarProjects() {
     ${projectsHtml}
   `;
 
-  // Bind clicks
-  list.querySelectorAll(".sidebar-project").forEach(btn => {
+  list.querySelectorAll(".sidebar-project").forEach((btn) => {
     btn.addEventListener("click", () => {
-      list.querySelectorAll(".sidebar-project").forEach(b => b.classList.remove("active"));
+      list.querySelectorAll(".sidebar-project").forEach((item) => item.classList.remove("active"));
       btn.classList.add("active");
-      const proj = btn.dataset.project;
-      state.currentProject = proj;
+      state.currentProject = btn.dataset.project;
       navigateToPage("pageDashboard");
       renderTasks();
     });
@@ -149,55 +169,52 @@ export function openNewTaskModal() {
     submitBtn.onclick = window.addNewTask;
   }
 
-  // Clear fields
-  document.getElementById("newTaskTitle").value    = "";
-  document.getElementById("newTaskMeta").value     = "";
+  document.getElementById("newTaskTitle").value = "";
+  document.getElementById("newTaskMeta").value = "";
   document.getElementById("newTaskDeadline").value = "";
-  document.getElementById("newTaskNotes").value    = "";
-  document.getElementById("newTaskCode").value     = "";
+  document.getElementById("newTaskNotes").value = "";
+  document.getElementById("newTaskCode").value = "";
 
-  // Populate project selector
-  const sel = document.getElementById("newTaskProject");
-  if (sel) {
-    sel.innerHTML = state.projects.map(p =>
-      `<option value="${p.name}" ${p.name === state.currentProject ? 'selected' : ''}>${p.name}</option>`
+  const select = document.getElementById("newTaskProject");
+  if (select) {
+    select.innerHTML = state.projects.map((project) =>
+      `<option value="${project.name}" ${project.name === state.currentProject ? "selected" : ""}>${project.name}</option>`
     ).join("");
   }
+
   document.getElementById("modalBackdrop")?.classList.remove("hidden");
 }
 
-export function addNewTask() {
+export async function addNewTask() {
   try {
-    const title    = document.getElementById("newTaskTitle").value.trim();
-    const meta     = document.getElementById("newTaskMeta").value.trim();
+    const title = document.getElementById("newTaskTitle").value.trim();
+    const meta = document.getElementById("newTaskMeta").value.trim();
     const priority = document.getElementById("newTaskPriority").value;
-    const label    = document.getElementById("newTaskLabel").value;
+    const label = document.getElementById("newTaskLabel").value;
     const deadline = document.getElementById("newTaskDeadline").value.trim();
-    const notes    = document.getElementById("newTaskNotes").value.trim();
-    const code     = document.getElementById("newTaskCode").value.trim();
-    const project  = document.getElementById("newTaskProject")?.value
-                   || (state.currentProject !== "all" ? state.currentProject : state.projects[0]?.name || "Unassigned");
+    const notes = document.getElementById("newTaskNotes").value.trim();
+    const code = document.getElementById("newTaskCode").value.trim();
+    const project = document.getElementById("newTaskProject")?.value
+      || (state.currentProject !== "all" ? state.currentProject : state.projects[0]?.name || "Unassigned");
 
     if (!title) {
       showToast("Please enter a task title", "error");
       return;
     }
 
-    // Date validation
     if (deadline) {
-      const d = new Date(deadline);
-      if (isNaN(d.getTime())) {
+      const parsed = new Date(deadline);
+      if (Number.isNaN(parsed.getTime())) {
         showToast("Invalid deadline date", "error");
         return;
       }
     }
 
-    state.tasks.unshift({
-      id: Date.now(),
+    const newTask = await createTaskRecord({
       title,
       priority,
       label,
-      deadline: deadline || "—",
+      deadline: deadline || "-",
       project,
       done: false,
       desc: meta || "",
@@ -207,9 +224,10 @@ export function addNewTask() {
       activity: [{ text: "Just created", time: "now" }]
     });
 
+    state.tasks.unshift(newTask);
     window.closeNewTaskModal();
     renderTasks();
-    showToast(`Task created successfully`);
+    showToast("Task created successfully");
   } catch (err) {
     showToast("Failed to create task", "error");
     console.error(err);
@@ -218,35 +236,35 @@ export function addNewTask() {
 
 export function showDetailPanel(id) {
   const panel = document.getElementById("detailPanel");
-  const t = state.tasks.find(x => x.id === id);
-  if (!panel || !t) return;
+  const task = state.tasks.find((item) => item.id === id);
+  if (!panel || !task) return;
 
   panel.classList.remove("hidden");
-  
+
   const statusEl = document.getElementById("detailStatus");
   if (statusEl) {
-    statusEl.textContent = t.done ? "Completed Task" : "Active Task";
-    statusEl.className = t.done 
+    statusEl.textContent = task.done ? "Completed Task" : "Active Task";
+    statusEl.className = task.done
       ? "text-[10px] font-bold uppercase tracking-widest text-green-500 opacity-80 mb-1"
       : "text-[10px] font-bold uppercase tracking-widest text-cyan opacity-80 mb-1";
   }
 
-  document.getElementById("detailTitle").textContent = t.title;
-  document.getElementById("detailDesc").textContent  = t.desc || "No description provided.";
-  document.getElementById("detailNotes").textContent  = t.notes || "No notes available.";
-  document.getElementById("detailCode").textContent   = t.code || "// No code snippet.";
+  document.getElementById("detailTitle").textContent = task.title;
+  document.getElementById("detailDesc").textContent = task.desc || "No description provided.";
+  document.getElementById("detailNotes").textContent = task.notes || "No notes available.";
+  document.getElementById("detailCode").textContent = task.code || "// No code snippet.";
 
   const prioEl = document.getElementById("detailPriority");
   if (prioEl) {
-    prioEl.textContent = t.priority.charAt(0).toUpperCase() + t.priority.slice(1);
-    prioEl.className = `text-[12px] font-bold badge-${t.priority}`;
+    prioEl.textContent = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
+    prioEl.className = `text-[12px] font-bold badge-${task.priority}`;
   }
 
-  document.getElementById("detailTags").innerHTML = (t.tags || []).map(tag =>
+  document.getElementById("detailTags").innerHTML = (task.tags || []).map((tag) =>
     `<span class="badge badge-wip">${tag}</span>`
   ).join("");
 
-  renderActivityTimeline(t);
+  renderActivityTimeline(task);
 }
 
 function renderActivityTimeline(task) {
@@ -258,12 +276,12 @@ function renderActivityTimeline(task) {
     return;
   }
 
-  container.innerHTML = task.activity.map(act => `
+  container.innerHTML = task.activity.map((activity) => `
     <div class="flex gap-4 relative">
       <div class="w-[15px] h-[15px] rounded-full bg-surface border-2 border-white/[0.1] z-10 flex-shrink-0 mt-0.5"></div>
       <div class="flex flex-col">
-        <span class="text-[12.5px] text-gray-300 font-medium">${act.text}</span>
-        <span class="text-[10px] text-gray-600 uppercase font-bold tracking-tight">${act.time}</span>
+        <span class="text-[12.5px] text-gray-300 font-medium">${activity.text}</span>
+        <span class="text-[10px] text-gray-600 uppercase font-bold tracking-tight">${activity.time}</span>
       </div>
     </div>
   `).join("");
@@ -273,13 +291,14 @@ export function copyDetailCode(btn) {
   const codeEl = document.getElementById("detailCode");
   if (!codeEl) return;
 
-  const text = codeEl.textContent;
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(codeEl.textContent).then(() => {
     const originalSvg = btn.innerHTML;
     btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00d4c8" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
-    setTimeout(() => { btn.innerHTML = originalSvg; }, 2000);
-  }).catch(err => {
-    console.error('Failed to copy: ', err);
+    setTimeout(() => {
+      btn.innerHTML = originalSvg;
+    }, 2000);
+  }).catch((err) => {
+    console.error("Failed to copy: ", err);
   });
 }
 

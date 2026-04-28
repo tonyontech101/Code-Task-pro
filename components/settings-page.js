@@ -40,9 +40,13 @@ class AppSettingsPage extends HTMLElement {
             
             <div class="flex flex-col gap-6">
               <div class="flex items-center gap-6 pb-6 border-b border-white/[0.04]">
-                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[24px] font-bold text-white shadow-2xl">JD</div>
+                <div class="relative w-20 h-20">
+                  <div id="profileAvatarInitials" class="w-full h-full rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[24px] font-bold text-white shadow-2xl">--</div>
+                  <img id="profileAvatarImg" class="absolute inset-0 w-full h-full rounded-full object-cover hidden shadow-2xl" src="" alt="Avatar">
+                </div>
                 <div>
-                  <button class="px-4 py-2 bg-overlay border border-white/10 rounded-xl text-[13px] font-semibold text-gray-300 hover:bg-hover transition-all">Change Avatar</button>
+                  <input type="file" id="avatarFileInput" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
+                  <button class="px-4 py-2 bg-overlay border border-white/10 rounded-xl text-[13px] font-semibold text-gray-300 hover:bg-hover transition-all" onclick="document.getElementById('avatarFileInput').click()">Change Avatar</button>
                   <p class="text-[11px] text-gray-600 mt-2 uppercase tracking-widest font-bold">JPG, PNG or GIF. Max 1MB.</p>
                 </div>
               </div>
@@ -50,21 +54,22 @@ class AppSettingsPage extends HTMLElement {
               <div class="grid grid-cols-2 gap-4">
                 <div class="flex flex-col gap-2">
                   <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Full Name</label>
-                  <input type="text" value="John Doe" class="settings-input">
+                  <input type="text" id="profileFullName" class="settings-input">
                 </div>
                 <div class="flex flex-col gap-2">
                   <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Job Title</label>
-                  <input type="text" value="Senior Developer" class="settings-input">
+                  <input type="text" id="profileJobTitle" placeholder="e.g. Senior Developer" class="settings-input">
                 </div>
               </div>
 
               <div class="flex flex-col gap-2">
                 <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Email Address</label>
-                <input type="email" value="john.doe@example.com" class="settings-input">
+                <input type="email" id="profileEmail" class="settings-input" readonly disabled>
+                <p class="text-[11px] text-gray-600 ml-1 italic">Email address cannot be changed.</p>
               </div>
 
               <div class="pt-4">
-                <button class="px-6 py-2.5 bg-cyan text-base font-bold rounded-xl hover:opacity-90 transition-all active:scale-95">Save Changes</button>
+                <button onclick="saveProfile()" class="px-6 py-2.5 bg-cyan text-base font-bold rounded-xl hover:opacity-90 transition-all active:scale-95">Save Changes</button>
               </div>
             </div>
           </div>

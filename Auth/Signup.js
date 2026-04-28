@@ -6,6 +6,8 @@ import {
   resetRateLimit
 } from "./rate-limit.js";
 
+import { updateProfile } from "../config/config.js";
+
 const RATE_LIMIT_OPTIONS = {
   maxAttempts: 4,
   windowMs: 20 * 60 * 1000,
@@ -180,14 +182,24 @@ $("signupBtn")?.addEventListener("click", async () => {
   showStatus("");
 
   try {
+    const signInMethods = await window.fetchSignInMethodsForEmail(window.auth, email);
+    if (signInMethods.length > 0) {
+      showErr("email", "emailErr", true);
+      $("emailErr").textContent = "This email is already in use. Please log in instead.";
+      showStatus("This email is already linked to an existing account.", "error");
+      signupBtn.classList.remove("loading");
+      signupBtn.disabled = false;
+      return;
+    }
+
     const userCredential = await window.createUserWithEmailAndPassword(
       window.auth,
       email,
       pw
     );
 
-    if (window.updateProfile) {
-      await window.updateProfile(userCredential.user, {
+    if (updateProfile) {
+      await updateProfile(userCredential.user, {
         displayName: name
       });
     }
@@ -206,7 +218,9 @@ $("signupBtn")?.addEventListener("click", async () => {
 
     switch (error.code) {
       case "auth/email-already-in-use":
-        message = "Email already exists";
+        showErr("email", "emailErr", true);
+        $("emailErr").textContent = "This email is already in use. Please log in instead.";
+        message = "This email is already linked to an existing account.";
         break;
       case "auth/weak-password":
         message = "Password must be at least 6 characters";
@@ -257,6 +271,9 @@ $("signupBtn")?.addEventListener("click", async () => {
       confirmPw: "confirmErr"
     };
 
+    if (id === "email") {
+      $("emailErr").textContent = "Please enter a valid email address.";
+    }
     $(map[id]).style.display = "none";
     syncRateLimitUi();
   });

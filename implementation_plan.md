@@ -49,3 +49,14 @@ Your `app.js` file is currently **~1,800 lines (76KB)**. As you add more feature
 ---
 
 **Which of these areas would you like to focus on first?** I'm happy to help you refactor `app.js`, set up a persistence layer (LocalStorage or Firebase), or implement the new Notes page features from your plan.
+
+
+
+
+
+fix logic for the team
+- should send an inv in thier inbox
+- create the team card after accepting
+- in the team card it should be visible the user profile, full name, job title, email address, and the projects, task completed, active status, date joined
+
+clarify something first if theres somthing you need to ask

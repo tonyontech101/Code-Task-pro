@@ -2,35 +2,40 @@
  * main.js - Application entry point
  */
 
-import { state } from './modules/state.js';
-import { navigateToPage, PAGE_IDS } from './modules/navigation.js';
-import { 
-  renderTasks, 
-  toggleTask, 
-  deleteTask, 
-  selectTask, 
+import { state } from "./modules/state.js";
+import { navigateToPage } from "./modules/navigation.js";
+import { loadWorkspaceData, ensureUserProfile } from "./modules/data-store.js";
+import {
+  renderTasks,
+  toggleTask,
+  deleteTask,
+  selectTask,
   renderSidebarProjects,
   openNewTaskModal,
   addNewTask,
   showDetailPanel,
   closeDetailPanel,
   copyDetailCode
-} from './controllers/dashboard-controller.js';
-import { 
-  renderProjectsGrid, 
-  openProjectDashboard, 
-  addNewProject, 
-  deleteProject 
-} from './controllers/projects-controller.js';
-import { 
-  renderTeamGrid, 
-  addNewMember, 
-  deleteMember 
-} from './controllers/team-controller.js';
-import { 
-  renderInbox, 
-  openChat, 
-  renderChatMessages, 
+} from "./controllers/dashboard-controller.js";
+import {
+  renderProjectsGrid,
+  openProjectDashboard,
+  addNewProject,
+  deleteProject,
+  openEditProjectModal,
+  saveEditProject,
+  closeEditProjectModal,
+  refreshProjectMemberOptions
+} from "./controllers/projects-controller.js";
+import {
+  renderTeamGrid,
+  sendTeamInvitation,
+  deleteMember,
+  resetMemberModal
+} from "./controllers/team-controller.js";
+import {
+  renderInbox,
+  openChat,
   renderSidebarChatList,
   filterSidebarChats,
   toggleInboxRead,
@@ -38,10 +43,15 @@ import {
   filterInbox,
   markAllInboxRead,
   clearAllInbox,
-  sendChatMessage
-} from './controllers/inbox-controller.js';
-import { 
-  renderNotes, 
+  sendChatMessage,
+  acceptInvitation,
+  declineInvitation,
+  loadInvitationsToInbox,
+  startGlobalMessageListener,
+  startNotificationListener
+} from "./controllers/inbox-controller.js";
+import {
+  renderNotes,
   selectNote,
   addNote,
   filterNotes,
@@ -53,23 +63,24 @@ import {
   changeNoteColor,
   promptAddTag,
   removeNoteTag
-} from './controllers/notes-controller.js';
+} from "./controllers/notes-controller.js";
 import {
   setSettingsTab,
-  sendContactForm
-} from './controllers/settings-controller.js';
+  sendContactForm,
+  saveProfile,
+  renderProfile as renderSettingsProfile,
+  handleAvatarUpload
+} from "./controllers/settings-controller.js";
 
-// Import Components (defining custom elements)
-import '../components/sidebar.js';
-import '../components/header.js';
-import '../components/task-area.js';
-import '../components/detail-panel.js';
-import '../components/task-modal.js';
-import '../components/inbox-page.js';
-import '../components/notes-page.js';
-import '../components/settings-page.js';
+import "../components/sidebar.js";
+import "../components/header.js";
+import "../components/task-area.js";
+import "../components/detail-panel.js";
+import "../components/task-modal.js";
+import "../components/inbox-page.js";
+import "../components/notes-page.js";
+import "../components/settings-page.js";
 
-// Expose functions to window for HTML event handlers
 window.navigateToPage = navigateToPage;
 window.toggleTask = toggleTask;
 window.deleteTask = deleteTask;
@@ -83,8 +94,14 @@ window.copyDetailCode = copyDetailCode;
 window.openProjectDashboard = openProjectDashboard;
 window.addNewProject = addNewProject;
 window.deleteProject = deleteProject;
-window.addNewMember = addNewMember;
+window.openEditProjectModal = openEditProjectModal;
+window.saveEditProject = saveEditProject;
+window.closeEditProjectModal = closeEditProjectModal;
+window.sendTeamInvitation = sendTeamInvitation;
+window.addNewMember = sendTeamInvitation; // backward compat for HTML onclick
 window.deleteMember = deleteMember;
+window.acceptInvitation = acceptInvitation;
+window.declineInvitation = declineInvitation;
 window.openChat = openChat;
 window.renderInbox = renderInbox;
 window.selectNote = selectNote;
@@ -107,54 +124,95 @@ window.filterInbox = filterInbox;
 window.markAllInboxRead = markAllInboxRead;
 window.clearAllInbox = clearAllInbox;
 window.sendChatMessage = sendChatMessage;
+window.saveProfile = saveProfile;
+window.handleAvatarUpload = handleAvatarUpload;
 
-// Additional UI helper functions
 window.closeNewTaskModal = () => document.getElementById("modalBackdrop")?.classList.add("hidden");
-window.openNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.remove("hidden");
+window.openNewProjectModal = () => {
+  refreshProjectMemberOptions();
+  document.getElementById("projectModalBackdrop")?.classList.remove("hidden");
+};
 window.closeNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.add("hidden");
-window.openNewMemberModal = () => document.getElementById("memberModalBackdrop")?.classList.remove("hidden");
-window.closeNewMemberModal = () => document.getElementById("memberModalBackdrop")?.classList.add("hidden");
+window.openNewMemberModal = () => {
+  resetMemberModal();
+  document.getElementById("memberModalBackdrop")?.classList.remove("hidden");
+};
+window.closeNewMemberModal = () => {
+  resetMemberModal();
+  document.getElementById("memberModalBackdrop")?.classList.add("hidden");
+};
 window.openLogoutModal = () => document.getElementById("logoutModalBackdrop")?.classList.remove("hidden");
 window.closeLogoutModal = () => document.getElementById("logoutModalBackdrop")?.classList.add("hidden");
 window.closeChatView = () => {
-  document.getElementById('inboxNotificationsView')?.classList.remove('hidden');
-  document.getElementById('inboxChatView')?.classList.add('hidden');
+  document.getElementById("inboxNotificationsView")?.classList.remove("hidden");
+  document.getElementById("inboxChatView")?.classList.add("hidden");
 };
 window.getCheckedMemberIds = (containerId) => {
-  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(cb => Number(cb.value));
+  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map((checkbox) => checkbox.value);
+};
+window.closeProjectModalOnBackdrop = (event) => {
+  if (event.target === event.currentTarget) window.closeNewProjectModal();
+};
+window.closeEditProjectOnBackdrop = (event) => {
+  if (event.target === event.currentTarget) window.closeEditProjectModal();
+};
+window.closeMemberModalOnBackdrop = (event) => {
+  if (event.target === event.currentTarget) window.closeNewMemberModal();
+};
+window.closeLogoutModalOnBackdrop = (event) => {
+  if (event.target === event.currentTarget) window.closeLogoutModal();
+};
+window.closeModalOnBackdrop = (event) => {
+  if (event.target === event.currentTarget) window.closeNewTaskModal();
 };
 
-// Mock data initialization (or fetch from Firebase later)
-function init() {
-  console.log("Initializing CodeTask Pro...");
-  
-  // Initial Renders
+let hasInitialized = false;
+let domReady = false;
+let authReady = false;
+
+function renderAll() {
   renderSidebarProjects();
   renderTasks();
-  
-  // Setup Rail Buttons
-  const railBtns = document.querySelectorAll(".rail-btn");
-  railBtns.forEach((btn, i) => {
-    const pageMap = { 0: "pageDashboard", 1: "pageProjects", 2: "pageTeam", 3: "pageNotes", 4: "pageInbox", 5: "pageSettings" };
-    if (pageMap[i]) {
-      btn.addEventListener("click", () => {
-        const pageId = pageMap[i];
-        navigateToPage(pageId);
-        
-        // Trigger specific renders
-        if (pageId === "pageProjects") renderProjectsGrid();
-        if (pageId === "pageTeam") renderTeamGrid();
-        if (pageId === "pageInbox") { renderInbox(); renderSidebarChatList(); }
-        if (pageId === "pageNotes") renderNotes();
-      });
-    }
-  });
+  renderProjectsGrid();
+  renderTeamGrid();
+  renderNotes();
+  renderSettingsProfile();
+}
 
-  // Setup Sidebar Filters (using delegation)
-  document.addEventListener("click", (e) => {
-    const labelBtn = e.target.closest(".sidebar-label");
+function bindRailButtons() {
+  const railBtns = document.querySelectorAll(".rail-btn");
+  railBtns.forEach((btn, index) => {
+    const pageMap = {
+      0: "pageDashboard",
+      1: "pageProjects",
+      2: "pageTeam",
+      3: "pageNotes",
+      4: "pageInbox",
+      5: "pageSettings"
+    };
+
+    const pageId = pageMap[index];
+    if (!pageId) return;
+
+    btn.addEventListener("click", () => {
+      navigateToPage(pageId);
+      if (pageId === "pageProjects") renderProjectsGrid();
+      if (pageId === "pageTeam") renderTeamGrid();
+      if (pageId === "pageInbox") {
+        renderInbox();
+        renderSidebarChatList();
+      }
+      if (pageId === "pageNotes") renderNotes();
+      if (pageId === "pageSettings") renderSettingsProfile();
+    });
+  });
+}
+
+function bindSidebarFilters() {
+  document.addEventListener("click", (event) => {
+    const labelBtn = event.target.closest(".sidebar-label");
     if (labelBtn) {
-      document.querySelectorAll(".sidebar-label").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".sidebar-label").forEach((btn) => btn.classList.remove("active"));
       labelBtn.classList.add("active");
       state.currentLabel = labelBtn.dataset.label;
       if (state.activePageId !== "pageDashboard") navigateToPage("pageDashboard");
@@ -162,9 +220,9 @@ function init() {
       return;
     }
 
-    const priorityBtn = e.target.closest(".sidebar-priority");
+    const priorityBtn = event.target.closest(".sidebar-priority");
     if (priorityBtn) {
-      document.querySelectorAll(".sidebar-priority").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".sidebar-priority").forEach((btn) => btn.classList.remove("active"));
       priorityBtn.classList.add("active");
       state.currentPriority = priorityBtn.dataset.priority;
       if (state.activePageId !== "pageDashboard") navigateToPage("pageDashboard");
@@ -172,18 +230,43 @@ function init() {
       return;
     }
 
-    const inboxBtn = e.target.closest(".sidebar-item[data-action='inbox']");
+    const inboxBtn = event.target.closest(".sidebar-item[data-action='inbox']");
     if (inboxBtn) {
       navigateToPage("pageInbox");
       renderInbox();
       renderSidebarChatList();
-      return;
     }
   });
-
-  // Show app body after init
-  document.body.style.display = "block";
 }
 
-// Wait for DOM
-document.addEventListener("DOMContentLoaded", init);
+async function init() {
+  if (hasInitialized || !domReady || !authReady) return;
+  hasInitialized = true;
+
+  try {
+    console.log("Initializing CodeTask Pro...");
+    await ensureUserProfile();
+    await loadWorkspaceData();
+    await loadInvitationsToInbox();
+    startGlobalMessageListener();
+    startNotificationListener();
+    renderAll();
+    refreshProjectMemberOptions();
+    bindRailButtons();
+    bindSidebarFilters();
+    document.body.style.display = "block";
+  } catch (err) {
+    console.error("Failed to initialize workspace data", err);
+    hasInitialized = false;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  domReady = true;
+  init();
+});
+
+window.addEventListener("auth-ready", () => {
+  authReady = true;
+  init();
+});

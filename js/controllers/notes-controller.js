@@ -1,217 +1,248 @@
-/**
- * notes-controller.js - Logic for the Notes page
- */
-
 import { state } from '../modules/state.js';
+import { createNoteRecord, updateNoteRecord, deleteNoteRecord } from '../modules/data-store.js';
+import { showToast } from '../modules/utils.js';
+
+function getEl(id) {
+  return document.getElementById(id);
+}
+
+let _saveDebounceTimer = null;
+let _lastPersistId = 0;
+
+async function persistNoteToServer(note) {
+  if (!note || !note.id) return;
+  const payload = {
+    title: note.title || '',
+    content: note.content || '',
+    scope: note.scope || 'personal',
+    color: note.color || 'default',
+    tags: note.tags || []
+  };
+
+  try {
+    await updateNoteRecord(note.id, payload);
+    showToast('Note saved', 'success');
+  } catch (err) {
+    console.error('Failed to persist note', err);
+    showToast('Failed to save note', 'error');
+  }
+}
+
+function schedulePersist(note, delay = 1000) {
+  _lastPersistId += 1;
+  const thisId = _lastPersistId;
+  if (_saveDebounceTimer) clearTimeout(_saveDebounceTimer);
+  _saveDebounceTimer = setTimeout(() => {
+    // only persist the latest scheduled id
+    if (thisId !== _lastPersistId) return;
+    persistNoteToServer(note);
+    _saveDebounceTimer = null;
+  }, delay);
+}
 
 export function renderNotes() {
-  const sidebarList = document.getElementById("notesSidebarList");
-  if (!sidebarList) return;
+  const list = getEl('notesSidebarList');
+  const editorArea = getEl('noteEditorArea');
+  if (!list) return;
 
-  let filtered = state.notes;
-  if (state.notesFilter !== "all") filtered = filtered.filter(n => n.scope === state.notesFilter);
-  if (state.notesSearchQuery) {
-    const q = state.notesSearchQuery.toLowerCase();
-    filtered = filtered.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q));
+  const query = (state.notesSearchQuery || '').toLowerCase();
+  const filtered = (state.notes || []).filter(n => {
+    if (state.notesFilter && state.notesFilter !== 'all' && n.scope !== state.notesFilter) return false;
+    if (!query) return true;
+    return (n.title || '').toLowerCase().includes(query) || (n.content || '').toLowerCase().includes(query);
+  });
+
+  list.innerHTML = filtered.map(n => {
+    const active = state.currentNoteId === n.id ? 'note-card-active' : '';
+    return `
+      <div class="note-card ${active}" onclick="window.selectNote('${n.id}')">
+        <div class="note-card-title">${n.title || 'Untitled'}</div>
+        <div class="note-card-body text-[12px] text-gray-500">${(n.content || '').slice(0, 80)}</div>
+      </div>`;
+  }).join('');
+
+  // Render editor if note selected
+  const note = state.notes.find(n => n.id === state.currentNoteId);
+  if (note && editorArea) {
+    // Render color picker
+    const colorPicker = getEl('noteColorPicker');
+    if (colorPicker) {
+      const COLORS = [
+        { id: 'default', hex: '#2b2b2b' },
+        { id: 'cyan',    hex: '#06b6d4' },
+        { id: 'purple',  hex: '#8b5cf6' },
+        { id: 'amber',   hex: '#f59e0b' },
+        { id: 'green',   hex: '#10b981' },
+        { id: 'red',     hex: '#ef4444' },
+        { id: 'indigo',  hex: '#6366f1' }
+      ];
+
+      colorPicker.innerHTML = COLORS.map(c => {
+        const active = note.color === c.id ? 'ring-2 ring-white/20' : '';
+        return `<button title="${c.id}" onclick="event.stopPropagation(); window.changeNoteColor('${c.id}')" class="w-6 h-6 rounded-full ${active}" style="background:${c.hex}; border:1px solid rgba(255,255,255,0.06);"></button>`;
+      }).join('');
+    }
+
+    getEl('noteEditorEmpty')?.classList.add('hidden');
+    getEl('noteEditorHeader')?.classList.remove('hidden');
+    getEl('noteEditorBody')?.classList.remove('hidden');
+    getEl('noteTitleInput').value = note.title || '';
+    getEl('noteContentInput').value = note.content || '';
+    getEl('noteEditorScope').textContent = note.scope ? (note.scope.charAt(0).toUpperCase() + note.scope.slice(1)) : 'Personal';
+    getEl('noteEditorDate').textContent = `Last edited: ${note.updatedAt ? new Date(note.updatedAt).toLocaleString() : 'Just now'}`;
+  } else {
+    getEl('noteEditorEmpty')?.classList.remove('hidden');
+    getEl('noteEditorHeader')?.classList.add('hidden');
+    getEl('noteEditorBody')?.classList.add('hidden');
   }
-
-  filtered.sort((a, b) => (a.pinned === b.pinned ? b.id - a.id : a.pinned ? -1 : 1));
-
-  if (filtered.length === 0) {
-    sidebarList.innerHTML = `<div class="flex flex-col items-center justify-center py-10 text-center px-4"><p class="text-[12px] text-gray-600 font-medium italic">No notes found</p></div>`;
-    return;
-  }
-
-  sidebarList.innerHTML = filtered.map(n => `
-    <div class="note-card ${state.currentNoteId === n.id ? 'active' : ''}" onclick="window.selectNote(${n.id})">
-      <div class="note-card-status" style="background: ${n.color}"></div>
-      <div class="flex items-center justify-between gap-2 mb-1">
-        <h4 class="note-card-title truncate flex-1">${n.title || 'Untitled Note'}</h4>
-        <div class="flex items-center gap-1 opacity-60">
-          ${n.pinned ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#00d4c8" stroke-width="3"><path d="M21 10c-3 0-4-1-4-4s-1-4-4-4-4 1-4 4-1 4-4 4c0 3 1 4 4 4s4 1 4 4 1 4 4 4"/></svg>' : ''}
-          ${n.scope === 'team' ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' : ''}
-        </div>
-      </div>
-      <p class="note-card-preview line-clamp-2">${n.content.substring(0, 80)}...</p>
-      <div class="note-card-footer">
-        <span class="note-card-date">${n.date}</span>
-        <div class="flex gap-1">${(n.tags || []).map(t => `<span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-gray-500 font-mono uppercase tracking-widest">${t}</span>`).join('')}</div>
-      </div>
-    </div>
-  `).join("");
 }
 
 export function selectNote(id) {
   state.currentNoteId = id;
-  const note = state.notes.find(n => n.id === id);
-  if (!note) return;
-
-  const titleInput = document.getElementById("noteTitleInput");
-  const contentInput = document.getElementById("noteContentInput");
-  if (titleInput) titleInput.value = note.title;
-  if (contentInput) contentInput.value = note.content;
-
-  document.getElementById("noteEditorHeader")?.classList.remove("hidden");
-  document.getElementById("noteEditorBody")?.classList.remove("hidden");
-  document.getElementById("noteEditorEmpty")?.classList.add("hidden");
-
   renderNotes();
-  renderEditorDetails(note);
 }
 
-function renderEditorDetails(note) {
-  const colorPicker = document.getElementById("noteColorPicker");
-  const tagsList = document.getElementById("noteTags");
-  const scopeBadge = document.getElementById("noteEditorScope");
-  const dateLabel = document.getElementById("noteEditorDate");
-  const pinBtn = document.getElementById("notePinBtn");
-  const shareBtn = document.getElementById("noteShareBtn");
-
-  if (pinBtn) {
-    pinBtn.classList.toggle('text-cyan', !!note.pinned);
-    pinBtn.classList.toggle('bg-cyan/10', !!note.pinned);
-    pinBtn.classList.toggle('border-cyan/20', !!note.pinned);
-    pinBtn.classList.toggle('text-gray-500', !note.pinned);
-  }
-
-  if (shareBtn) {
-    shareBtn.classList.toggle('text-purple', note.scope === 'team');
-    shareBtn.classList.toggle('bg-purple/10', note.scope === 'team');
-    shareBtn.classList.toggle('border-purple/20', note.scope === 'team');
-    shareBtn.classList.toggle('text-gray-500', note.scope !== 'team');
-  }
-
-  if (scopeBadge) {
-    scopeBadge.textContent = note.scope;
-    scopeBadge.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/10 ${note.scope === 'team' ? 'text-purple border-purple/20 bg-purple/5' : 'text-gray-500'}`;
-  }
-  if (dateLabel) dateLabel.textContent = `Last edited: ${note.date}`;
-
-  if (colorPicker) {
-    const colors = ["#00d4c8", "#8b5cf6", "#ef4444", "#f59e0b", "#10b981", "#3b82f6"];
-    colorPicker.innerHTML = colors.map(c => `
-      <div class="color-dot ${note.color === c ? 'active' : ''}" 
-           style="background: ${c}; color: ${c}" 
-           onclick="window.changeNoteColor('${c}')"></div>
-    `).join("");
-  }
-
-  if (tagsList) {
-    tagsList.innerHTML = (note.tags || []).map(t => `
-      <div class="note-tag">
-        ${t}
-        <svg class="note-tag-remove" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" onclick="window.removeNoteTag('${t}')"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    `).join("") + `
-      <button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-gray-500 hover:text-cyan transition-all" onclick="window.promptAddTag()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-    `;
-  }
-}
-
-export function changeNoteColor(color) {
-  const note = state.notes.find(n => n.id === state.currentNoteId);
-  if (note) {
-    note.color = color;
+export async function addNote() {
+  const payload = { title: '', content: '', scope: 'personal', color: 'default', tags: [] };
+  try {
+    const created = await createNoteRecord(payload);
+    state.notes = state.notes || [];
+    // Prepend the newly created record (server id + timestamps)
+    state.notes.unshift(created);
+    state.currentNoteId = created.id;
     renderNotes();
-    renderEditorDetails(note);
+    showToast('Note created', 'success');
+  } catch (err) {
+    console.error('Failed to create note', err);
+    showToast('Failed to create note', 'error');
   }
-}
-
-export function promptAddTag() {
-  const tag = prompt("Enter new tag:");
-  if (tag) {
-    const note = state.notes.find(n => n.id === state.currentNoteId);
-    if (note) {
-      if (!note.tags) note.tags = [];
-      if (!note.tags.includes(tag.toLowerCase())) {
-        note.tags.push(tag.toLowerCase());
-        renderNotes();
-        renderEditorDetails(note);
-      }
-    }
-  }
-}
-
-export function removeNoteTag(tag) {
-  const note = state.notes.find(n => n.id === state.currentNoteId);
-  if (note && note.tags) {
-    note.tags = note.tags.filter(t => t !== tag);
-    renderNotes();
-    renderEditorDetails(note);
-  }
-}
-
-export function addNote() {
-  const newNote = {
-    id: Date.now(),
-    title: "",
-    content: "",
-    date: "Just now",
-    color: "#00d4c8",
-    pinned: false,
-    scope: "personal",
-    tags: []
-  };
-  state.notes.unshift(newNote);
-  selectNote(newNote.id);
 }
 
 export function filterNotes(query) {
-  state.notesSearchQuery = query;
+  state.notesSearchQuery = query || '';
   renderNotes();
 }
 
 export function setNotesFilter(filter) {
   state.notesFilter = filter;
-  document.querySelectorAll('.note-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.filter === filter);
-    t.classList.toggle('text-gray-500', t.dataset.filter !== filter);
-  });
-  renderNotes();
-}
-
-export function saveNote() {
-  const note = state.notes.find(n => n.id === state.currentNoteId);
-  if (!note) return;
-
-  const titleInput = document.getElementById("noteTitleInput");
-  const contentInput = document.getElementById("noteContentInput");
-  
-  note.title = titleInput.value;
-  note.content = contentInput.value;
-  note.date = "Just now";
-  
+  document.querySelectorAll('.note-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === filter));
   renderNotes();
 }
 
 export function toggleNotePin() {
   const note = state.notes.find(n => n.id === state.currentNoteId);
-  if (note) {
-    note.pinned = !note.pinned;
-    renderNotes();
-    renderEditorDetails(note);
-  }
+  if (!note) return;
+  note.pinned = !note.pinned;
+  note.updatedAt = Date.now();
+  renderNotes();
 }
 
 export function toggleNoteScope() {
   const note = state.notes.find(n => n.id === state.currentNoteId);
-  if (note) {
-    note.scope = note.scope === "personal" ? "team" : "personal";
+  if (!note) return;
+  note.scope = note.scope === 'team' ? 'personal' : 'team';
+  note.updatedAt = Date.now();
+  renderNotes();
+}
+
+export async function deleteCurrentNote() {
+  if (!confirm('Delete this note?')) return;
+  const id = state.currentNoteId;
+  try {
+    if (id && id.startsWith('note-')) {
+      // Local-only id (shouldn't happen after persistence), just remove
+      state.notes = state.notes.filter(n => n.id !== id);
+    } else if (id) {
+      await deleteNoteRecord(id);
+      state.notes = state.notes.filter(n => n.id !== id);
+    }
+    state.currentNoteId = null;
     renderNotes();
-    renderEditorDetails(note);
+    showToast('Note deleted', 'success');
+  } catch (err) {
+    console.error('Failed to delete note', err);
+    showToast('Failed to delete note', 'error');
   }
 }
 
-export function deleteCurrentNote() {
-  if (!confirm("Delete this note?")) return;
-  state.notes = state.notes.filter(n => n.id !== state.currentNoteId);
-  state.currentNoteId = null;
-  
-  document.getElementById("noteEditorHeader")?.classList.add("hidden");
-  document.getElementById("noteEditorBody")?.classList.add("hidden");
-  document.getElementById("noteEditorEmpty")?.classList.remove("hidden");
-  
+export async function saveNote() {
+  const note = state.notes.find(n => n.id === state.currentNoteId);
+  if (!note) return;
+  const titleEl = getEl('noteTitleInput');
+  const contentEl = getEl('noteContentInput');
+  const updatedPayload = {
+    title: titleEl ? titleEl.value : note.title,
+    content: contentEl ? contentEl.value : note.content,
+    scope: note.scope || 'personal',
+    color: note.color || 'default',
+    tags: note.tags || []
+  };
+
+  // Optimistic local update
+  note.title = updatedPayload.title;
+  note.content = updatedPayload.content;
+  note.updatedAt = Date.now();
+  renderNotes();
+
+  if (!note.id) return;
+  try {
+    await updateNoteRecord(note.id, updatedPayload);
+    showToast('Note saved', 'success');
+  } catch (err) {
+    console.error('Failed to save note', err);
+    showToast('Failed to save note', 'error');
+  }
+}
+
+export async function changeNoteColor(color) {
+  const note = state.notes.find(n => n.id === state.currentNoteId);
+  if (!note) return;
+  // Optimistic UI
+  note.color = color;
+  note.updatedAt = Date.now();
+  renderNotes();
+
+  if (!note.id) return;
+  try {
+    await updateNoteRecord(note.id, { color });
+    showToast('Note color updated', 'success');
+  } catch (err) {
+    console.error('Failed to update note color', err);
+    showToast('Failed to update color', 'error');
+  }
+}
+
+export function promptAddTag() {
+  const note = state.notes.find(n => n.id === state.currentNoteId);
+  if (!note) return;
+  const tag = prompt('Add tag');
+  if (!tag) return;
+  note.tags = note.tags || [];
+  if (!note.tags.includes(tag)) note.tags.push(tag);
+  note.updatedAt = Date.now();
   renderNotes();
 }
+
+export function removeNoteTag(tag) {
+  const note = state.notes.find(n => n.id === state.currentNoteId);
+  if (!note) return;
+  note.tags = (note.tags || []).filter(t => t !== tag);
+  note.updatedAt = Date.now();
+  renderNotes();
+}
+
+// Provide default export for legacy imports (if any)
+export default {
+  renderNotes,
+  selectNote,
+  addNote,
+  filterNotes,
+  setNotesFilter,
+  toggleNotePin,
+  toggleNoteScope,
+  deleteCurrentNote,
+  saveNote,
+  changeNoteColor,
+  promptAddTag,
+  removeNoteTag
+};
