@@ -3,23 +3,63 @@
  */
 
 import { state } from '../modules/state.js';
-import { getContactGradient, getStatusColor } from '../modules/utils.js';
+import { getContactGradient, getStatusColor, showToast, escapeHtml } from '../modules/utils.js';
+import { acceptInvitationRecord, declineInvitationRecord, loadWorkspaceData } from '../modules/data-store.js';
+import { renderSidebarProjects, renderTasks } from './dashboard-controller.js';
+import { renderProjectsGrid } from './projects-controller.js';
+import { renderTeamGrid } from './team-controller.js';
+
+function timeAgo(timestamp) {
+  if (!timestamp) return "Just now";
+  const raw = typeof timestamp === "object" && typeof timestamp.seconds === "number"
+    ? timestamp.seconds * 1000
+    : Number(timestamp);
+  const diffMs = Date.now() - raw;
+  const minutes = Math.max(0, Math.floor(diffMs / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+function invitationToInboxItem(invitation) {
+  return {
+    id: `invite:${invitation.id}`,
+    invitationId: invitation.id,
+    type: "invitation",
+    icon: "project",
+    title: "Project invitation",
+    body: `${invitation.senderName} invited you to join ${invitation.projectName}`,
+    project: invitation.projectName,
+    time: timeAgo(invitation.createdAt),
+    read: false,
+    invitation
+  };
+}
+
+function getVisibleInboxItems() {
+  const invitations = state.pendingInvitations.map(invitationToInboxItem);
+  return [...invitations, ...state.inboxItems];
+}
 
 export function renderInbox() {
   const list  = document.getElementById("inboxList");
   const count = document.getElementById("inboxCount");
   if (!list) return;
 
+  const items = getVisibleInboxItems();
   const filtered = state.inboxFilter === "all"
-    ? state.inboxItems
+    ? items
     : state.inboxFilter === "unread"
-      ? state.inboxItems.filter(n => !n.read)
-      : state.inboxItems.filter(n => n.type === state.inboxFilter);
+      ? items.filter(n => !n.read)
+      : items.filter(n => n.type === state.inboxFilter);
 
   if (count) count.textContent = `(${filtered.length})`;
 
   // Update sidebar badge
-  const unreadCount = state.inboxItems.filter(n => !n.read).length;
+  const unreadCount = items.filter(n => !n.read).length;
   const badge = document.getElementById("inboxBadge");
   if (badge) badge.textContent = unreadCount;
 
@@ -42,7 +82,7 @@ export function renderInbox() {
   const today = [];
   const earlier = [];
   filtered.forEach(item => {
-    if (item.time.includes('min') || item.time.includes('hour')) today.push(item);
+    if (item.time.includes('min') || item.time.includes('hour') || item.time === 'Just now') today.push(item);
     else earlier.push(item);
   });
 
@@ -65,29 +105,38 @@ function renderInboxItem(item) {
       mention: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>`,
       project: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
       system:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+      invitation: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="m22 10-10 6L2 10"/><path d="M2 10l10-6 10 6"/></svg>`,
     };
     return icons[type] || icons.system;
   };
   const getInboxIconColor = (type) => {
-    const colors = { task: "inbox-icon-task", mention: "inbox-icon-mention", project: "inbox-icon-project", system: "inbox-icon-system" };
+    const colors = { task: "inbox-icon-task", mention: "inbox-icon-mention", project: "inbox-icon-project", system: "inbox-icon-system", invitation: "inbox-icon-invitation" };
     return colors[type] || colors.system;
   };
 
+  const itemId = JSON.stringify(item.id);
+  const isInvitation = item.type === "invitation";
+
   return `
-    <div class="inbox-item ${item.read ? '' : 'inbox-item-unread'}" onclick="window.toggleInboxRead(${item.id})">
+    <div class="inbox-item ${item.read ? '' : 'inbox-item-unread'}" onclick="${isInvitation ? '' : `window.toggleInboxRead(${itemId})`}">
       <div class="inbox-item-icon ${getInboxIconColor(item.type)}">${getInboxIcon(item.type)}</div>
       <div class="inbox-item-content">
         <div class="inbox-item-header">
-          <span class="inbox-item-title">${item.title}</span>
-          <span class="inbox-item-time">${item.time}</span>
+          <span class="inbox-item-title">${escapeHtml(item.title)}</span>
+          <span class="inbox-item-time">${escapeHtml(item.time)}</span>
         </div>
-        <p class="inbox-item-body">${item.body}</p>
-        ${item.project ? `<span class="inbox-item-project">${item.project}</span>` : ''}
+        <p class="inbox-item-body">${escapeHtml(item.body)}</p>
+        ${item.project ? `<span class="inbox-item-project">${escapeHtml(item.project)}</span>` : ''}
+        ${isInvitation ? `
+          <div class="inbox-actions">
+            <button class="inbox-action-btn inbox-accept" onclick="event.stopPropagation(); window.acceptInvitation('${item.invitationId}')">Accept</button>
+            <button class="inbox-action-btn inbox-decline" onclick="event.stopPropagation(); window.declineInvitation('${item.invitationId}')">Decline</button>
+          </div>` : ''}
       </div>
       ${!item.read ? '<div class="inbox-unread-dot"></div>' : ''}
-      <button class="inbox-item-dismiss icon-btn" onclick="event.stopPropagation(); window.dismissInboxItem(${item.id})" title="Dismiss">
+      ${isInvitation ? '' : `<button class="inbox-item-dismiss icon-btn" onclick="event.stopPropagation(); window.dismissInboxItem(${itemId})" title="Dismiss">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      </button>`}
     </div>`;
 }
 
@@ -238,4 +287,33 @@ export function toggleInboxRead(id) {
 export function dismissInboxItem(id) {
   state.inboxItems = state.inboxItems.filter(n => n.id !== id);
   renderInbox();
+}
+
+export async function acceptInvitation(invitationId) {
+  try {
+    await acceptInvitationRecord(invitationId);
+    state.pendingInvitations = state.pendingInvitations.filter(inv => inv.id !== invitationId);
+    await loadWorkspaceData();
+    renderInbox();
+    renderSidebarProjects();
+    renderProjectsGrid();
+    renderTeamGrid();
+    renderTasks();
+    showToast("Invitation accepted");
+  } catch (err) {
+    showToast("Failed to accept invitation", "error");
+    console.error(err);
+  }
+}
+
+export async function declineInvitation(invitationId) {
+  try {
+    await declineInvitationRecord(invitationId);
+    state.pendingInvitations = state.pendingInvitations.filter(inv => inv.id !== invitationId);
+    renderInbox();
+    showToast("Invitation declined");
+  } catch (err) {
+    showToast("Failed to decline invitation", "error");
+    console.error(err);
+  }
 }

@@ -293,6 +293,10 @@ select.modal-input option { background: #21252e; }
   background: rgba(59,130,246,0.12);
   color: #3b82f6;
 }
+.inbox-icon-invitation {
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+}
 .inbox-icon-system {
   background: rgba(245,158,11,0.12);
   color: #f59e0b;
@@ -348,6 +352,39 @@ select.modal-input option { background: #21252e; }
   color: #8b8fa8;
   background: var(--bg-overlay);
   border: 1px solid var(--border);
+}
+
+.inbox-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.inbox-action-btn {
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.inbox-accept {
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.22);
+  color: #34d399;
+}
+.inbox-accept:hover {
+  background: rgba(16,185,129,0.2);
+}
+.inbox-decline {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+}
+.inbox-decline:hover {
+  color: #f87171;
+  border-color: rgba(248,113,113,0.22);
+  background: rgba(248,113,113,0.08);
 }
 
 /* ── Inbox Unread Dot ─────────────────────────────────────────────────────── */

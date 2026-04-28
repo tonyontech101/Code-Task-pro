@@ -25,7 +25,8 @@ import {
 import { 
   renderTeamGrid, 
   addNewMember, 
-  deleteMember 
+  deleteMember,
+  prepareInviteMemberModal
 } from './controllers/team-controller.js';
 import { 
   renderInbox, 
@@ -38,7 +39,9 @@ import {
   filterInbox,
   markAllInboxRead,
   clearAllInbox,
-  sendChatMessage
+  sendChatMessage,
+  acceptInvitation,
+  declineInvitation
 } from './controllers/inbox-controller.js';
 import { 
   renderNotes, 
@@ -58,6 +61,14 @@ import {
   setSettingsTab,
   sendContactForm
 } from './controllers/settings-controller.js';
+import {
+  ensureUserProfile,
+  loadWorkspaceData,
+  setUserPresence,
+  subscribeToPendingInvitations,
+  subscribeToWorkspaceMembers,
+  subscribeToWorkspaceProjects
+} from './modules/data-store.js';
 
 // Import Components (defining custom elements)
 import '../components/sidebar.js';
@@ -85,6 +96,7 @@ window.addNewProject = addNewProject;
 window.deleteProject = deleteProject;
 window.addNewMember = addNewMember;
 window.deleteMember = deleteMember;
+window.prepareInviteMemberModal = prepareInviteMemberModal;
 window.openChat = openChat;
 window.renderInbox = renderInbox;
 window.selectNote = selectNote;
@@ -107,12 +119,17 @@ window.filterInbox = filterInbox;
 window.markAllInboxRead = markAllInboxRead;
 window.clearAllInbox = clearAllInbox;
 window.sendChatMessage = sendChatMessage;
+window.acceptInvitation = acceptInvitation;
+window.declineInvitation = declineInvitation;
 
 // Additional UI helper functions
 window.closeNewTaskModal = () => document.getElementById("modalBackdrop")?.classList.add("hidden");
 window.openNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.remove("hidden");
 window.closeNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.add("hidden");
-window.openNewMemberModal = () => document.getElementById("memberModalBackdrop")?.classList.remove("hidden");
+window.openNewMemberModal = () => {
+  prepareInviteMemberModal();
+  document.getElementById("memberModalBackdrop")?.classList.remove("hidden");
+};
 window.closeNewMemberModal = () => document.getElementById("memberModalBackdrop")?.classList.add("hidden");
 window.openLogoutModal = () => document.getElementById("logoutModalBackdrop")?.classList.remove("hidden");
 window.closeLogoutModal = () => document.getElementById("logoutModalBackdrop")?.classList.add("hidden");
@@ -121,8 +138,94 @@ window.closeChatView = () => {
   document.getElementById('inboxChatView')?.classList.add('hidden');
 };
 window.getCheckedMemberIds = (containerId) => {
-  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(cb => Number(cb.value));
+  return [...document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)].map(cb => cb.value);
 };
+window.closeModalOnBackdrop = (event) => {
+  if (event.target.id === "modalBackdrop") window.closeNewTaskModal();
+};
+window.closeProjectModalOnBackdrop = (event) => {
+  if (event.target.id === "projectModalBackdrop") window.closeNewProjectModal();
+};
+window.closeMemberModalOnBackdrop = (event) => {
+  if (event.target.id === "memberModalBackdrop") window.closeNewMemberModal();
+};
+window.closeLogoutModalOnBackdrop = (event) => {
+  if (event.target.id === "logoutModalBackdrop") window.closeLogoutModal();
+};
+window.openEditProjectModal = () => {
+  alert("Project editing is not available yet.");
+};
+
+let unsubscribeInvitations = null;
+let unsubscribeMembers = null;
+let unsubscribeProjects = null;
+let presenceTimer = null;
+let hydrationStarted = false;
+
+function renderWorkspace() {
+  renderSidebarProjects();
+  renderTasks();
+  renderProjectsGrid();
+  renderTeamGrid();
+  renderInbox();
+  renderNotes();
+}
+
+function setupPresence() {
+  const syncPresence = () => setUserPresence(document.hidden ? "offline" : "online").catch(console.error);
+  syncPresence();
+
+  if (presenceTimer) window.clearInterval(presenceTimer);
+  presenceTimer = window.setInterval(() => {
+    setUserPresence("online").catch(console.error);
+  }, 60000);
+
+  document.addEventListener("visibilitychange", syncPresence);
+  window.addEventListener("beforeunload", () => {
+    setUserPresence("offline").catch(console.error);
+  });
+}
+
+async function hydrateAuthenticatedWorkspace() {
+  if (hydrationStarted) return;
+  hydrationStarted = true;
+
+  try {
+    await ensureUserProfile();
+    setupPresence();
+    await loadWorkspaceData();
+    renderWorkspace();
+
+    if (unsubscribeInvitations) unsubscribeInvitations();
+    unsubscribeInvitations = subscribeToPendingInvitations((pending) => {
+      state.pendingInvitations = pending;
+      renderInbox();
+    }, console.error);
+
+    if (unsubscribeMembers) unsubscribeMembers();
+    unsubscribeMembers = subscribeToWorkspaceMembers((members) => {
+      state.members = members;
+      renderTeamGrid();
+      renderProjectsGrid();
+      renderSidebarProjects();
+    }, console.error);
+
+    if (unsubscribeProjects) unsubscribeProjects();
+    unsubscribeProjects = subscribeToWorkspaceProjects((projects) => {
+      state.projects = projects;
+      renderSidebarProjects();
+      renderProjectsGrid();
+      renderTeamGrid();
+      renderTasks();
+    }, console.error);
+  } catch (err) {
+    hydrationStarted = false;
+    console.error("Failed to load workspace data:", err);
+  }
+}
+
+window.addEventListener("auth-ready", hydrateAuthenticatedWorkspace);
+if (window.codetaskAuthReady) hydrateAuthenticatedWorkspace();
 
 // Mock data initialization (or fetch from Firebase later)
 function init() {

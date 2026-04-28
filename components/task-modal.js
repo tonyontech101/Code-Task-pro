@@ -22,6 +22,9 @@ class AppTaskModal extends HTMLElement {
             <select id="newTaskProject" class="modal-input">
               <!-- populated dynamically by openNewTaskModal() -->
             </select>
+            <select id="newTaskAssignee" class="modal-input">
+              <!-- populated dynamically by openNewTaskModal() -->
+            </select>
             <input id="newTaskDeadline" type="text" placeholder="Deadline (e.g. 14 Dec)" class="modal-input" />
             <textarea id="newTaskNotes" placeholder="Strategic Notes..." class="modal-input min-h-[80px] py-3"></textarea>
             <textarea id="newTaskCode" placeholder="Logical Implementation (JS code)..." class="modal-input min-h-[100px] py-3 font-mono text-[12px]"></textarea>

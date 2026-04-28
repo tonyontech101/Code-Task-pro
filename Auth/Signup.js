@@ -192,6 +192,14 @@ $("signupBtn")?.addEventListener("click", async () => {
       });
     }
 
+    if (window.writeUserProfile) {
+      await window.writeUserProfile(userCredential.user, {
+        displayName: name,
+        email,
+        onlineStatus: "online"
+      });
+    }
+
     resetRateLimit("signup", email);
     showStatus("Account created successfully.", "success");
 

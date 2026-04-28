@@ -16,6 +16,26 @@ import {
   GoogleAuthProvider
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+  arrayUnion,
+  arrayRemove
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 // ── Firebase Config ──────────────────────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyBOMgLzJXKRWoTPCc2tnoSNuUytLo0lRn0",
@@ -29,14 +49,51 @@ const firebaseConfig = {
 // ── Initialise Firebase (once) ───────────────────────────────
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db   = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+async function writeUserProfile(user, overrides = {}) {
+  if (!user) return;
+
+  const email = (overrides.email || user.email || "").toLowerCase();
+  const displayName = overrides.displayName || user.displayName || email.split("@")[0] || "User";
+
+  await setDoc(doc(db, "userProfiles", user.uid), {
+    uid: user.uid,
+    displayName,
+    email,
+    photoURL: overrides.photoURL ?? user.photoURL ?? null,
+    jobTitle: overrides.jobTitle || "Team Member",
+    onlineStatus: overrides.onlineStatus || "offline",
+    lastSeen: Date.now(),
+    updatedAt: Date.now()
+  }, { merge: true });
+}
 
 // ── ES Module exports (for auth-guard.js etc.) ───────────────
 export {
   auth,
+  db,
   provider,
   onAuthStateChanged,
-  signOut
+  signOut,
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+  arrayUnion,
+  arrayRemove,
+  writeUserProfile
 };
 
 // ── Window globals (for non-module scripts: login.js, signup.js) ─
@@ -44,11 +101,13 @@ window.auth = auth;
 window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
 window.signInWithEmailAndPassword     = signInWithEmailAndPassword;
 window.updateProfile                  = updateProfile;
+window.writeUserProfile               = writeUserProfile;
 
 // ── Google Sign-In (shared by login + signup) ────────────────
 window.signInWithGoogle = async () => {
   try {
-    await signInWithPopup(auth, provider);
+    const credential = await signInWithPopup(auth, provider);
+    await writeUserProfile(credential.user, { onlineStatus: "online" });
     window.location.href = "index.html";
   } catch (err) {
     console.error("Google sign-in error:", err);

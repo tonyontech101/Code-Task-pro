@@ -4,7 +4,8 @@
 
 import { state } from '../modules/state.js';
 import { navigateToPage } from '../modules/navigation.js';
-import { formatDate, showToast } from '../modules/utils.js';
+import { formatDate, showToast, escapeHtml } from '../modules/utils.js';
+import { createProjectRecord, deleteProjectRecord } from '../modules/data-store.js';
 import { renderTasks, renderSidebarProjects } from './dashboard-controller.js';
 
 export function renderProjectsGrid(highlightName) {
@@ -40,10 +41,13 @@ export function renderProjectsGrid(highlightName) {
     const isActive  = highlightName === p.name;
     const pctDone   = taskCount ? Math.round((doneCount/taskCount)*100) : 0;
     const projMembers = (p.memberIds || []).map(id => state.members.find(m => m.id === id)).filter(Boolean);
+    const projectId = JSON.stringify(p.id);
+    const projectName = JSON.stringify(p.name);
     
     const avatars = projMembers.slice(0, 3).map(m => {
-      const ini = m.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-      return `<div class="w-7 h-7 -ml-2 first:ml-0 rounded-full bg-overlay border-2 border-elevated flex items-center justify-center text-[10px] font-bold text-gray-400" title="${m.name}">${ini}</div>`;
+      const name = m.name || m.email || "Member";
+      const ini = name.split(/[\s@]+/).filter(Boolean).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      return `<div class="w-7 h-7 -ml-2 first:ml-0 rounded-full bg-overlay border-2 border-elevated flex items-center justify-center text-[10px] font-bold text-gray-400" title="${escapeHtml(name)}">${escapeHtml(ini)}</div>`;
     }).join('');
     
     const extra = projMembers.length > 3 ? `<div class="w-7 h-7 -ml-2 rounded-full bg-overlay border-2 border-elevated flex items-center justify-center text-[9px] font-bold text-gray-500">+${projMembers.length-3}</div>` : '';
@@ -53,11 +57,11 @@ export function renderProjectsGrid(highlightName) {
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <div class="w-2.5 h-2.5 rounded-full shadow-lg shadow-black/20" style="background: ${p.color}"></div>
-            <h3 class="text-[15px] font-bold text-gray-100 cursor-pointer hover:text-cyan transition-colors" onclick="window.openProjectDashboard('${p.name}')">${p.name}</h3>
+            <h3 class="text-[15px] font-bold text-gray-100 cursor-pointer hover:text-cyan transition-colors" onclick="window.openProjectDashboard(${projectName})">${escapeHtml(p.name)}</h3>
           </div>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${p.status}</span>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
         </div>
-        <p class="text-[13px] text-gray-500 leading-relaxed mb-6 line-clamp-2 min-h-[40px]">${p.desc}</p>
+        <p class="text-[13px] text-gray-500 leading-relaxed mb-6 line-clamp-2 min-h-[40px]">${escapeHtml(p.desc)}</p>
         <div class="flex items-center justify-between text-[11px] font-medium mb-2">
           <span class="text-gray-600">${doneCount} of ${taskCount} tasks</span>
           <span class="font-mono" style="color: ${p.color}">${pctDone}%</span>
@@ -70,8 +74,8 @@ export function renderProjectsGrid(highlightName) {
           <span class="text-[11px] text-gray-600 font-medium">Created ${formatDate(p.id)}</span>
         </div>
         <div class="grid grid-cols-2 gap-3 mt-auto">
-          <button onclick="window.openEditProjectModal(${p.id})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Edit</button>
-          <button onclick="window.deleteProject(${p.id})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Delete</button>
+          <button onclick="window.openEditProjectModal(${projectId})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Edit</button>
+          <button onclick="window.deleteProject(${projectId})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Delete</button>
         </div>
       </div>`;
   }).join('');
@@ -86,7 +90,7 @@ export function openProjectDashboard(name) {
   });
 }
 
-export function addNewProject() {
+export async function addNewProject() {
   try {
     const name   = document.getElementById("newProjectName").value.trim();
     const desc   = document.getElementById("newProjectDesc").value.trim();
@@ -104,7 +108,8 @@ export function addNewProject() {
       return;
     }
 
-    state.projects.push({ id: Date.now(), name, desc: desc || "No description", color, status, memberIds: mIds });
+    const project = await createProjectRecord({ name, desc: desc || "No description", color, status, memberIds: mIds });
+    state.projects.unshift(project);
 
     renderSidebarProjects();
     renderProjectsGrid();
@@ -119,12 +124,13 @@ export function addNewProject() {
   }
 }
 
-export function deleteProject(id) {
+export async function deleteProject(id) {
   try {
     const p = state.projects.find(x => x.id === id);
     if (!p) return;
     if (!confirm(`Delete "${p.name}"? Tasks in this project will become unassigned.`)) return;
 
+    await deleteProjectRecord(id, p.name);
     state.tasks.forEach(t => { if (t.project === p.name) t.project = 'Unassigned'; });
     const idx = state.projects.findIndex(x => x.id === id);
     if (idx !== -1) state.projects.splice(idx, 1);

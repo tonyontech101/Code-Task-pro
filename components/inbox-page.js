@@ -47,6 +47,10 @@ class AppInboxPage extends HTMLElement {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                   Projects
                 </button>
+                <button class="inbox-tab" data-filter="invitation" onclick="filterInbox('invitation')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="m22 10-10 6L2 10"/><path d="M2 10l10-6 10 6"/></svg>
+                  Invites
+                </button>
                 <button class="inbox-tab" data-filter="mention" onclick="filterInbox('mention')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>
                   Mentions

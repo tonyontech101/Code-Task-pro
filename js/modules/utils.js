@@ -3,9 +3,19 @@
  */
 
 export const formatDate = (ts) => {
-  const d = new Date(ts);
+  if (!ts) return "recently";
+  const raw = typeof ts === "object" && typeof ts.seconds === "number" ? ts.seconds * 1000 : ts;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "recently";
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
+
+export const escapeHtml = (value = "") => String(value)
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
 
 export const getRoleClass = (role) => {
   const r = role.toLowerCase();

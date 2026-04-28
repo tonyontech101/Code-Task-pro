@@ -13,6 +13,8 @@ onAuthStateChanged(auth, (user) => {
 
   // ✅ Authenticated — reveal the page
   console.log("Authorized:", user.email);
+  window.codetaskAuthUser = user;
+  window.codetaskAuthReady = true;
   document.body.style.display = "block";
 
   // Dispatch a custom event so components can react to the user
