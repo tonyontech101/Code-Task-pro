@@ -40,13 +40,7 @@ function getMemberTaskCount(member, projects) {
   const projectIds = new Set(projects.flatMap(project => [project.id, project.sourceProjectId].filter(Boolean)));
 
   return state.tasks.filter(task => {
-    const sameProject = projectNames.has(task.project) || projectIds.has(task.projectId);
-    if (!sameProject) return false;
-
-    return task.assigneeUid === member.uid ||
-      task.assigneeEmail === member.email ||
-      task.memberId === member.id ||
-      task.assigneeId === member.id;
+    return projectNames.has(task.project) || projectIds.has(task.projectId) || projectIds.has(task.sourceProjectId);
   }).length;
 }
 
@@ -88,7 +82,7 @@ export function renderTeamGrid() {
       const projects = getMemberProjects(member);
       return sum + getMemberTaskCount(member, projects);
     }, 0);
-    statTotalTasks.innerHTML = `<span class="font-bold text-cyan font-mono">${totalAssigned}</span> assigned tasks`;
+    statTotalTasks.innerHTML = `<span class="font-bold text-cyan font-mono">${totalAssigned}</span> project tasks`;
   }
 
   if (state.members.length === 0) {
@@ -147,7 +141,7 @@ export function renderTeamGrid() {
         <div class="flex items-center justify-between pt-4 border-t border-white/[0.03]">
           <div class="flex items-center gap-1.5 text-gray-500">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-cyan"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span class="text-[12px] font-medium font-mono">${taskCount} assigned tasks</span>
+            <span class="text-[12px] font-medium font-mono">${taskCount} project tasks</span>
           </div>
           <div class="flex items-center gap-1.5">
             <div class="w-2 h-2 rounded-full ${statusColors[status] || 'bg-gray-500'}"></div>

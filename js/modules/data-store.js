@@ -80,6 +80,68 @@ async function fetchCollection(name) {
   return sortByNewest(snapshot.docs.map(hydrateDoc));
 }
 
+function uniqueByTaskOwner(items) {
+  const byKey = new Map();
+  const currentUid = auth.currentUser?.uid || "";
+  items.forEach((item) => {
+    const key = `${item.ownerUid || currentUid}:${item.id}`;
+    const existing = byKey.get(key);
+    byKey.set(key, { ...item, readOnly: existing?.readOnly && item.readOnly, sharedTask: existing?.sharedTask || item.sharedTask });
+  });
+  return sortByNewest([...byKey.values()]);
+}
+
+function sharedProjectSources(projects = []) {
+  const currentUid = auth.currentUser?.uid;
+  return projects.filter((project) => (
+    project.ownerUid &&
+    project.ownerUid !== currentUid &&
+    project.sourceProjectId &&
+    project.name
+  ));
+}
+
+async function fetchSharedProjectTasks(projects = []) {
+  const sources = sharedProjectSources(projects);
+  const snapshots = await Promise.all(sources.flatMap((project) => [
+    getDocs(query(
+      collection(db, "users", project.ownerUid, COLLECTIONS.tasks),
+      where("project", "==", project.name)
+    )),
+    getDocs(query(
+      collection(db, "users", project.ownerUid, COLLECTIONS.tasks),
+      where("projectId", "==", project.sourceProjectId)
+    ))
+  ]));
+
+  return snapshots.flatMap((snapshot, index) => {
+    const project = sources[Math.floor(index / 2)];
+    return snapshot.docs.map((taskDoc) => ({
+      id: taskDoc.id,
+      ...taskDoc.data(),
+      project: project.name,
+      projectId: project.id,
+      sourceProjectId: project.sourceProjectId,
+      ownerUid: project.ownerUid,
+      sharedProjectName: project.name,
+      readOnly: true,
+      sharedTask: true
+    }));
+  });
+}
+
+export async function fetchVisibleTasks(projects = state.projects) {
+  const [localTasks, sharedTasks] = await Promise.all([
+    fetchCollection(COLLECTIONS.tasks),
+    fetchSharedProjectTasks(projects)
+  ]);
+
+  return uniqueByTaskOwner([
+    ...localTasks.map((task) => ({ ...task, readOnly: false, sharedTask: false })),
+    ...sharedTasks
+  ]);
+}
+
 async function enrichMembersWithProfiles(members) {
   return Promise.all(members.map(async (member) => {
     if (!member.uid) return member;
@@ -101,13 +163,13 @@ async function enrichMembersWithProfiles(members) {
 // No local seeding: fetch notes directly from Firestore for the authenticated user.
 
 export async function loadWorkspaceData() {
-  const [tasks, projects, members, notes, pendingInvitations] = await Promise.all([
-    fetchCollection(COLLECTIONS.tasks),
+  const [projects, members, notes, pendingInvitations] = await Promise.all([
     fetchCollection(COLLECTIONS.projects),
     fetchCollection(COLLECTIONS.members),
     fetchCollection(COLLECTIONS.notes),
     fetchPendingInvitations()
   ]);
+  const tasks = await fetchVisibleTasks(projects);
 
   state.tasks = tasks;
   state.projects = projects;
@@ -127,6 +189,55 @@ export function subscribeToWorkspaceMembers(onChange, onError) {
     const members = sortByNewest(snapshot.docs.map(hydrateDoc));
     onChange(await enrichMembersWithProfiles(members));
   }, onError);
+}
+
+export function subscribeToVisibleTasks(projects = state.projects, onChange, onError) {
+  const latestBySource = new Map();
+
+  const emit = () => {
+    onChange(uniqueByTaskOwner([...latestBySource.values()].flat()));
+  };
+
+  const subscriptions = [
+    onSnapshot(userCollection(COLLECTIONS.tasks), (snapshot) => {
+      latestBySource.set("local", snapshot.docs.map((taskDoc) => ({
+        id: taskDoc.id,
+        ...taskDoc.data(),
+        readOnly: false,
+        sharedTask: false
+      })));
+      emit();
+    }, onError)
+  ];
+
+  sharedProjectSources(projects).forEach((project) => {
+    const addSharedSnapshot = (key, snapshot) => {
+      latestBySource.set(key, snapshot.docs.map((taskDoc) => ({
+        id: taskDoc.id,
+        ...taskDoc.data(),
+        project: project.name,
+        projectId: project.id,
+        sourceProjectId: project.sourceProjectId,
+        ownerUid: project.ownerUid,
+        sharedProjectName: project.name,
+        readOnly: true,
+        sharedTask: true
+      })));
+      emit();
+    };
+
+    subscriptions.push(onSnapshot(query(
+      collection(db, "users", project.ownerUid, COLLECTIONS.tasks),
+      where("project", "==", project.name)
+    ), (snapshot) => addSharedSnapshot(`${project.id}:name`, snapshot), onError));
+
+    subscriptions.push(onSnapshot(query(
+      collection(db, "users", project.ownerUid, COLLECTIONS.tasks),
+      where("projectId", "==", project.sourceProjectId)
+    ), (snapshot) => addSharedSnapshot(`${project.id}:source`, snapshot), onError));
+  });
+
+  return () => subscriptions.forEach((unsubscribe) => unsubscribe());
 }
 
 export async function createTaskRecord(payload) {

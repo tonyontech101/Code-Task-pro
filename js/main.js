@@ -67,7 +67,8 @@ import {
   setUserPresence,
   subscribeToPendingInvitations,
   subscribeToWorkspaceMembers,
-  subscribeToWorkspaceProjects
+  subscribeToWorkspaceProjects,
+  subscribeToVisibleTasks
 } from './modules/data-store.js';
 
 // Import Components (defining custom elements)
@@ -159,6 +160,7 @@ window.openEditProjectModal = () => {
 let unsubscribeInvitations = null;
 let unsubscribeMembers = null;
 let unsubscribeProjects = null;
+let unsubscribeTasks = null;
 let presenceTimer = null;
 let hydrationStarted = false;
 
@@ -210,9 +212,24 @@ async function hydrateAuthenticatedWorkspace() {
       renderSidebarProjects();
     }, console.error);
 
+    if (unsubscribeTasks) unsubscribeTasks();
+    unsubscribeTasks = subscribeToVisibleTasks(state.projects, (tasks) => {
+      state.tasks = tasks;
+      renderTasks();
+      renderProjectsGrid();
+      renderTeamGrid();
+    }, console.error);
+
     if (unsubscribeProjects) unsubscribeProjects();
     unsubscribeProjects = subscribeToWorkspaceProjects((projects) => {
       state.projects = projects;
+      if (unsubscribeTasks) unsubscribeTasks();
+      unsubscribeTasks = subscribeToVisibleTasks(state.projects, (tasks) => {
+        state.tasks = tasks;
+        renderTasks();
+        renderProjectsGrid();
+        renderTeamGrid();
+      }, console.error);
       renderSidebarProjects();
       renderProjectsGrid();
       renderTeamGrid();

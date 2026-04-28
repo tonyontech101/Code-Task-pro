@@ -7,6 +7,14 @@ import { navigateToPage } from '../modules/navigation.js';
 import { showToast, escapeHtml } from '../modules/utils.js';
 import { createTaskRecord, deleteTaskRecord, updateTaskRecord } from '../modules/data-store.js';
 
+function getTaskKey(task) {
+  return `${task.ownerUid || "local"}:${task.id}`;
+}
+
+function findTaskByKey(key) {
+  return state.tasks.find(task => getTaskKey(task) === key || task.id === key);
+}
+
 export function renderTasks() {
   const tbody = document.getElementById("taskBody");
   if (!tbody) return;
@@ -31,20 +39,24 @@ export function renderTasks() {
       </tr>`;
   } else {
     tbody.innerHTML = filtered.map(t => {
-      const taskId = JSON.stringify(t.id);
+      const taskKey = JSON.stringify(getTaskKey(t));
+      const readOnly = Boolean(t.readOnly);
       return `
-      <tr class="${t.id === state.selectedTaskId ? 'selected' : ''}" onclick="window.selectTask(${taskId})">
+      <tr class="${getTaskKey(t) === state.selectedTaskId ? 'selected' : ''}" onclick='window.selectTask(${taskKey})'>
         <td>
-          <div class="task-cb ${t.done ? 'checked' : ''}" onclick="event.stopPropagation(); window.toggleTask(${taskId})"></div>
+          <div class="task-cb ${t.done ? 'checked' : ''} ${readOnly ? 'opacity-40 cursor-not-allowed' : ''}" ${readOnly ? 'title="Shared task"' : `onclick='event.stopPropagation(); window.toggleTask(${taskKey})'`}></div>
         </td>
         <td><span class="badge badge-${escapeHtml(t.priority)}">${escapeHtml(t.priority)}</span></td>
-        <td class="text-[13.5px] ${t.done ? 'line-through text-gray-600' : 'text-gray-200'} font-medium">${escapeHtml(t.title)}</td>
+        <td class="text-[13.5px] ${t.done ? 'line-through text-gray-600' : 'text-gray-200'} font-medium">
+          ${escapeHtml(t.title)}
+          ${readOnly ? '<span class="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-cyan/10 text-cyan font-bold uppercase align-middle">Shared</span>' : ''}
+        </td>
         <td class="text-[13px] text-gray-500 font-mono">${escapeHtml(t.deadline)}</td>
         <td><span class="badge badge-${escapeHtml(t.label)}">${escapeHtml(t.label)}</span></td>
         <td>
-          <button class="icon-btn" onclick="event.stopPropagation(); window.deleteTask(${taskId})" title="Delete">
+          ${readOnly ? '<span class="text-[11px] text-gray-700 font-bold">View</span>' : `<button class="icon-btn" onclick='event.stopPropagation(); window.deleteTask(${taskKey})' title="Delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
+          </button>`}
         </td>
       </tr>
     `;
@@ -77,13 +89,17 @@ function updateDashboardMeta(filtered) {
 }
 
 export async function toggleTask(id) {
-  const t = state.tasks.find(x => x.id === id);
+  const t = findTaskByKey(id);
+  if (t?.readOnly) {
+    showToast("Shared project tasks are view-only", "warning");
+    return;
+  }
   if (t) { 
     const nextDone = !t.done;
     t.done = nextDone;
     renderTasks();
     try {
-      await updateTaskRecord(id, { done: nextDone });
+      await updateTaskRecord(t.id, { done: nextDone });
     } catch (err) {
       t.done = !nextDone;
       renderTasks();
@@ -93,30 +109,18 @@ export async function toggleTask(id) {
   }
 }
 
-function populateTaskAssignees(projectName) {
-  const assigneeSelect = document.getElementById("newTaskAssignee");
-  if (!assigneeSelect) return;
-
-  const project = state.projects.find(p => p.name === projectName);
-  const projectMemberIds = project?.memberIds || [];
-  const members = projectMemberIds
-    .map(id => state.members.find(member => member.id === id))
-    .filter(Boolean);
-
-  assigneeSelect.innerHTML = [
-    `<option value="">Unassigned</option>`,
-    ...members.map(member => `<option value="${escapeHtml(member.id)}">${escapeHtml(member.name || member.email || "Team Member")}</option>`)
-  ].join("");
-}
-
 export async function deleteTask(id) {
   try {
-    const idx = state.tasks.findIndex(x => x.id === id);
+    const idx = state.tasks.findIndex(x => getTaskKey(x) === id || x.id === id);
     if (idx !== -1) {
       const task = state.tasks[idx];
-      await deleteTaskRecord(id);
+      if (task.readOnly) {
+        showToast("Shared project tasks are view-only", "warning");
+        return;
+      }
+      await deleteTaskRecord(task.id);
       state.tasks.splice(idx, 1);
-      if (state.selectedTaskId === id) window.closeDetailPanel();
+      if (state.selectedTaskId === id || state.selectedTaskId === getTaskKey(task)) window.closeDetailPanel();
       renderTasks();
       showToast(`Task "${task.title}" deleted`);
     }
@@ -127,9 +131,10 @@ export async function deleteTask(id) {
 }
 
 export function selectTask(id) {
-  state.selectedTaskId = id;
+  const task = findTaskByKey(id);
+  state.selectedTaskId = task ? getTaskKey(task) : id;
   renderTasks();
-  window.showDetailPanel(id);
+  window.showDetailPanel(state.selectedTaskId);
 }
 
 export function renderSidebarProjects() {
@@ -192,8 +197,6 @@ export function openNewTaskModal() {
     sel.innerHTML = state.projects.map(p =>
       `<option value="${escapeHtml(p.name)}" ${p.name === state.currentProject ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
     ).join("");
-    sel.onchange = () => populateTaskAssignees(sel.value);
-    populateTaskAssignees(sel.value);
   }
   document.getElementById("modalBackdrop")?.classList.remove("hidden");
 }
@@ -209,8 +212,6 @@ export async function addNewTask() {
     const code     = document.getElementById("newTaskCode").value.trim();
     const project  = document.getElementById("newTaskProject")?.value
                    || (state.currentProject !== "all" ? state.currentProject : state.projects[0]?.name || "Unassigned");
-    const assigneeId = document.getElementById("newTaskAssignee")?.value || "";
-    const assignee = state.members.find(member => member.id === assigneeId);
 
     if (!title) {
       showToast("Please enter a task title", "error");
@@ -226,18 +227,13 @@ export async function addNewTask() {
       }
     }
 
-    const newTask = await createTaskRecord({
+    await createTaskRecord({
       title,
       priority,
       label,
       deadline: deadline || "—",
       project,
       projectId: state.projects.find(p => p.name === project)?.id || null,
-      memberId: assignee?.id || null,
-      assigneeId: assignee?.id || null,
-      assigneeUid: assignee?.uid || null,
-      assigneeEmail: assignee?.email || null,
-      assigneeName: assignee?.name || null,
       done: false,
       desc: meta || "",
       notes: notes || "",
@@ -245,10 +241,8 @@ export async function addNewTask() {
       tags: [label],
       activity: [{ text: "Just created", time: "now" }]
     });
-    state.tasks.unshift(newTask);
 
     window.closeNewTaskModal();
-    renderTasks();
     showToast(`Task created successfully`);
   } catch (err) {
     showToast("Failed to create task", "error");
@@ -258,7 +252,7 @@ export async function addNewTask() {
 
 export function showDetailPanel(id) {
   const panel = document.getElementById("detailPanel");
-  const t = state.tasks.find(x => x.id === id);
+  const t = findTaskByKey(id);
   if (!panel || !t) return;
 
   panel.classList.remove("hidden");
@@ -272,6 +266,7 @@ export function showDetailPanel(id) {
   }
 
   document.getElementById("detailTitle").textContent = t.title;
+  document.getElementById("detailDeadline").textContent = t.deadline || "-";
   document.getElementById("detailDesc").textContent  = t.desc || "No description provided.";
   document.getElementById("detailNotes").textContent  = t.notes || "No notes available.";
   document.getElementById("detailCode").textContent   = t.code || "// No code snippet.";

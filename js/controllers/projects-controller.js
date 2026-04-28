@@ -43,6 +43,7 @@ export function renderProjectsGrid(highlightName) {
     const projMembers = (p.memberIds || []).map(id => state.members.find(m => m.id === id)).filter(Boolean);
     const projectId = JSON.stringify(p.id);
     const projectName = JSON.stringify(p.name);
+    const ownerName = p.ownerName || p.ownerEmail?.split("@")[0] || (p.ownerUid ? "Project owner" : "You");
     
     const avatars = projMembers.slice(0, 3).map(m => {
       const name = m.name || m.email || "Member";
@@ -53,29 +54,52 @@ export function renderProjectsGrid(highlightName) {
     const extra = projMembers.length > 3 ? `<div class="w-7 h-7 -ml-2 rounded-full bg-overlay border-2 border-elevated flex items-center justify-center text-[9px] font-bold text-gray-500">+${projMembers.length-3}</div>` : '';
 
     return `
-      <div class="project-card group bg-elevated border ${isActive ? 'border-cyan/40 ring-1 ring-cyan/20' : 'border-white/[0.04]'} rounded-2xl p-6 transition-all hover:bg-hover hover:translate-y-[-2px] hover:shadow-xl hover:shadow-black/40">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-2.5 h-2.5 rounded-full shadow-lg shadow-black/20" style="background: ${p.color}"></div>
-            <h3 class="text-[15px] font-bold text-gray-100 cursor-pointer hover:text-cyan transition-colors" onclick="window.openProjectDashboard(${projectName})">${escapeHtml(p.name)}</h3>
+      <div class="project-card group bg-elevated border ${isActive ? 'border-cyan/40 ring-1 ring-cyan/20' : 'border-white/[0.04]'} rounded-xl p-5 transition-all hover:bg-hover hover:translate-y-[-2px] hover:shadow-xl hover:shadow-black/40">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-lg bg-overlay border border-white/[0.06] flex items-center justify-center flex-shrink-0">
+              <span class="w-2.5 h-2.5 rounded-full shadow-lg shadow-black/20" style="background: ${p.color}"></span>
+            </div>
+            <div class="min-w-0 pt-0.5">
+              <h3 class="text-[15px] font-bold text-gray-100 cursor-pointer hover:text-cyan transition-colors truncate" onclick="window.openProjectDashboard(${projectName})">${escapeHtml(p.name)}</h3>
+              <p class="text-[12px] text-gray-600 truncate">Owner <span class="text-gray-400 font-semibold">${escapeHtml(ownerName)}</span></p>
+            </div>
           </div>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
+          <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
         </div>
-        <p class="text-[13px] text-gray-500 leading-relaxed mb-6 line-clamp-2 min-h-[40px]">${escapeHtml(p.desc)}</p>
+
+        <p class="text-[13px] text-gray-500 leading-relaxed mb-5 line-clamp-2 min-h-[40px]">${escapeHtml(p.desc)}</p>
+
+        <div class="grid grid-cols-3 gap-2 mb-5">
+          <div class="rounded-lg bg-overlay/70 border border-white/[0.04] px-3 py-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Tasks</p>
+            <p class="text-[16px] font-bold text-gray-100 font-mono mt-0.5">${taskCount}</p>
+          </div>
+          <div class="rounded-lg bg-overlay/70 border border-white/[0.04] px-3 py-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Done</p>
+            <p class="text-[16px] font-bold text-green-400 font-mono mt-0.5">${doneCount}</p>
+          </div>
+          <div class="rounded-lg bg-overlay/70 border border-white/[0.04] px-3 py-2">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Members</p>
+            <p class="text-[16px] font-bold text-cyan font-mono mt-0.5">${projMembers.length}</p>
+          </div>
+        </div>
+
         <div class="flex items-center justify-between text-[11px] font-medium mb-2">
-          <span class="text-gray-600">${doneCount} of ${taskCount} tasks</span>
+          <span class="text-gray-600">Progress</span>
           <span class="font-mono" style="color: ${p.color}">${pctDone}%</span>
         </div>
-        <div class="h-1.5 bg-white/5 rounded-full mb-6 overflow-hidden">
+        <div class="h-1.5 bg-white/5 rounded-full mb-5 overflow-hidden">
           <div class="h-full rounded-full transition-all duration-700" style="width: ${pctDone}%; background: ${p.color}"></div>
         </div>
-        <div class="flex items-center justify-between mb-6 pt-4 border-t border-white/[0.03]">
-          <div class="flex items-center">${projMembers.length ? `<div class="flex items-center mr-2">${avatars}${extra}</div>` : ''}</div>
-          <span class="text-[11px] text-gray-600 font-medium">Created ${formatDate(p.id)}</span>
+
+        <div class="flex items-center justify-between mb-5 pt-4 border-t border-white/[0.03]">
+          <div class="flex items-center min-h-7">${projMembers.length ? `<div class="flex items-center mr-2">${avatars}${extra}</div>` : '<span class="text-[11px] text-gray-600 italic">No members</span>'}</div>
+          <span class="text-[11px] text-gray-600 font-medium">Created ${formatDate(p.createdAt || p.id)}</span>
         </div>
         <div class="grid grid-cols-2 gap-3 mt-auto">
-          <button onclick="window.openEditProjectModal(${projectId})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Edit</button>
-          <button onclick="window.deleteProject(${projectId})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-xl transition-all active:scale-[0.98]">Delete</button>
+          <button onclick="window.openEditProjectModal(${projectId})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Edit</button>
+          <button onclick="window.deleteProject(${projectId})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Delete</button>
         </div>
       </div>`;
   }).join('');
