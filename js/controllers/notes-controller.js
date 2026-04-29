@@ -24,6 +24,18 @@ function getNoteDateLabel(note) {
   return note.date || formatDate(note.updatedAt || note.createdAt);
 }
 
+function getCreatorName(note) {
+  return note.creatorName || note.ownerName || "Unknown";
+}
+
+function getNoteMetaLabel(note) {
+  return `${getNoteDateLabel(note)} · ${getCreatorName(note)}`;
+}
+
+function inlineJsArg(value) {
+  return escapeHtml(JSON.stringify(value));
+}
+
 function persistNote(id, payload, immediate = false) {
   const key = String(id);
   if (noteSaveTimers.has(key)) {
@@ -31,10 +43,15 @@ function persistNote(id, payload, immediate = false) {
     noteSaveTimers.delete(key);
   }
 
-  const save = () => updateNoteRecord(id, payload).catch((err) => {
-    showToast("Failed to save note", "error");
-    console.error(err);
-  });
+  const save = () => updateNoteRecord(id, payload)
+    .then((updates) => {
+      const note = findNote(id);
+      if (note) Object.assign(note, updates);
+    })
+    .catch((err) => {
+      showToast("Failed to save note", "error");
+      console.error(err);
+    });
 
   if (immediate) return save();
 
@@ -63,7 +80,7 @@ export function renderNotes() {
   }
 
   sidebarList.innerHTML = filtered.map(n => {
-    const noteId = JSON.stringify(String(n.id));
+    const noteId = inlineJsArg(String(n.id));
     const title = String(n.title || "");
     const content = String(n.content || "");
     return `
@@ -78,7 +95,7 @@ export function renderNotes() {
       </div>
       <p class="note-card-preview line-clamp-2">${escapeHtml(content.substring(0, 80))}${content.length > 80 ? '...' : ''}</p>
       <div class="note-card-footer">
-        <span class="note-card-date">${escapeHtml(getNoteDateLabel(n))}</span>
+        <span class="note-card-date">${escapeHtml(getNoteMetaLabel(n))}</span>
         <div class="flex gap-1">${(n.tags || []).map(t => `<span class="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-gray-500 font-mono uppercase tracking-widest">${escapeHtml(t)}</span>`).join('')}</div>
       </div>
     </div>
@@ -130,7 +147,7 @@ function renderEditorDetails(note) {
     scopeBadge.textContent = note.scope;
     scopeBadge.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/10 ${note.scope === 'team' ? 'text-purple border-purple/20 bg-purple/5' : 'text-gray-500'}`;
   }
-  if (dateLabel) dateLabel.textContent = `Last edited: ${getNoteDateLabel(note)}`;
+  if (dateLabel) dateLabel.textContent = `Last edited: ${getNoteDateLabel(note)} · Created by ${getCreatorName(note)}`;
 
   if (colorPicker) {
     const colors = ["#00d4c8", "#8b5cf6", "#ef4444", "#f59e0b", "#10b981", "#3b82f6"];
@@ -145,7 +162,7 @@ function renderEditorDetails(note) {
     tagsList.innerHTML = (note.tags || []).map(t => `
       <div class="note-tag">
         ${escapeHtml(t)}
-        <svg class="note-tag-remove" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" onclick='window.removeNoteTag(${JSON.stringify(t)})'><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg class="note-tag-remove" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" onclick='window.removeNoteTag(${inlineJsArg(t)})'><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </div>
     `).join("") + `
       <button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 text-gray-500 hover:text-cyan transition-all" onclick="window.promptAddTag()">
@@ -256,13 +273,27 @@ export function toggleNotePin() {
   }
 }
 
-export function toggleNoteScope() {
+export async function toggleNoteScope() {
   const note = findNote(state.currentNoteId);
   if (note) {
-    note.scope = note.scope === "personal" ? "team" : "personal";
-    renderNotes();
-    renderEditorDetails(note);
-    persistNote(note.id, { scope: note.scope }, true);
+    const previousId = note.id;
+    const nextScope = note.scope === "personal" ? "team" : "personal";
+
+    try {
+      const updates = await updateNoteRecord(note.id, { scope: nextScope });
+      const noteIndex = state.notes.findIndex(n => String(n.id) === String(previousId));
+      Object.assign(note, updates);
+      if (updates.id && String(updates.id) !== String(previousId)) {
+        if (noteIndex !== -1) state.notes.splice(noteIndex, 1, note);
+        state.currentNoteId = updates.id;
+      }
+      renderNotes();
+      renderEditorDetails(note);
+      showToast(nextScope === "team" ? "Note shared with team" : "Note moved to personal");
+    } catch (err) {
+      showToast("Failed to update note sharing", "error");
+      console.error(err);
+    }
   }
 }
 

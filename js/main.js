@@ -2,6 +2,7 @@
  * main.js - Application entry point
  */
 
+import { CleanupManager, debounce } from './modules/performance.js';
 import { state } from './modules/state.js';
 import { navigateToPage, PAGE_IDS } from './modules/navigation.js';
 import { 
@@ -20,7 +21,11 @@ import {
   renderProjectsGrid, 
   openProjectDashboard, 
   addNewProject, 
-  deleteProject 
+  deleteProject,
+  prepareNewProjectModal,
+  openEditProjectModal,
+  closeEditProjectModal,
+  saveEditProject
 } from './controllers/projects-controller.js';
 import { 
   renderTeamGrid, 
@@ -66,6 +71,7 @@ import {
   loadWorkspaceData,
   setUserPresence,
   subscribeToPendingInvitations,
+  subscribeToVisibleNotes,
   subscribeToWorkspaceMembers,
   subscribeToWorkspaceProjects,
   subscribeToVisibleTasks
@@ -95,6 +101,10 @@ window.copyDetailCode = copyDetailCode;
 window.openProjectDashboard = openProjectDashboard;
 window.addNewProject = addNewProject;
 window.deleteProject = deleteProject;
+window.openEditProjectModal = openEditProjectModal;
+window.closeEditProjectModal = closeEditProjectModal;
+window.saveEditProject = saveEditProject;
+window.renderTeamGrid = renderTeamGrid;
 window.addNewMember = addNewMember;
 window.deleteMember = deleteMember;
 window.prepareInviteMemberModal = prepareInviteMemberModal;
@@ -125,7 +135,7 @@ window.declineInvitation = declineInvitation;
 
 // Additional UI helper functions
 window.closeNewTaskModal = () => document.getElementById("modalBackdrop")?.classList.add("hidden");
-window.openNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.remove("hidden");
+window.openNewProjectModal = prepareNewProjectModal;
 window.closeNewProjectModal = () => document.getElementById("projectModalBackdrop")?.classList.add("hidden");
 window.openNewMemberModal = () => {
   prepareInviteMemberModal();
@@ -147,20 +157,18 @@ window.closeModalOnBackdrop = (event) => {
 window.closeProjectModalOnBackdrop = (event) => {
   if (event.target.id === "projectModalBackdrop") window.closeNewProjectModal();
 };
+window.closeEditProjectOnBackdrop = (event) => {
+  if (event.target.id === "editProjectBackdrop") window.closeEditProjectModal();
+};
 window.closeMemberModalOnBackdrop = (event) => {
   if (event.target.id === "memberModalBackdrop") window.closeNewMemberModal();
 };
 window.closeLogoutModalOnBackdrop = (event) => {
   if (event.target.id === "logoutModalBackdrop") window.closeLogoutModal();
 };
-window.openEditProjectModal = () => {
-  alert("Project editing is not available yet.");
-};
+// Global cleanup manager for Firebase listeners
+const workspaceCleanup = new CleanupManager();
 
-let unsubscribeInvitations = null;
-let unsubscribeMembers = null;
-let unsubscribeProjects = null;
-let unsubscribeTasks = null;
 let presenceTimer = null;
 let hydrationStarted = false;
 
@@ -170,6 +178,7 @@ function renderWorkspace() {
   renderProjectsGrid();
   renderTeamGrid();
   renderInbox();
+  renderSidebarChatList();
   renderNotes();
 }
 
@@ -198,43 +207,47 @@ async function hydrateAuthenticatedWorkspace() {
     await loadWorkspaceData();
     renderWorkspace();
 
-    if (unsubscribeInvitations) unsubscribeInvitations();
-    unsubscribeInvitations = subscribeToPendingInvitations((pending) => {
+    // Clean up any existing listeners before starting fresh
+    workspaceCleanup.cleanup();
+
+    workspaceCleanup.add(subscribeToPendingInvitations((pending) => {
       state.pendingInvitations = pending;
       renderInbox();
-    }, console.error);
+    }, console.error));
 
-    if (unsubscribeMembers) unsubscribeMembers();
-    unsubscribeMembers = subscribeToWorkspaceMembers((members) => {
+    workspaceCleanup.add(subscribeToWorkspaceMembers((members) => {
       state.members = members;
       renderTeamGrid();
       renderProjectsGrid();
       renderSidebarProjects();
-    }, console.error);
+      renderSidebarChatList();
+    }, console.error));
 
-    if (unsubscribeTasks) unsubscribeTasks();
-    unsubscribeTasks = subscribeToVisibleTasks(state.projects, (tasks) => {
-      state.tasks = tasks;
-      renderTasks();
-      renderProjectsGrid();
-      renderTeamGrid();
-    }, console.error);
-
-    if (unsubscribeProjects) unsubscribeProjects();
-    unsubscribeProjects = subscribeToWorkspaceProjects((projects) => {
+    workspaceCleanup.add(subscribeToWorkspaceProjects((projects) => {
       state.projects = projects;
-      if (unsubscribeTasks) unsubscribeTasks();
-      unsubscribeTasks = subscribeToVisibleTasks(state.projects, (tasks) => {
+      
+      // Secondary listeners that depend on the project list
+      // Note: In a more advanced setup, we might manage these separately,
+      // but for now, we just refresh the specific subscriptions.
+      
+      workspaceCleanup.add(subscribeToVisibleTasks(state.projects, (tasks) => {
         state.tasks = tasks;
         renderTasks();
         renderProjectsGrid();
         renderTeamGrid();
-      }, console.error);
+      }, console.error));
+
+      workspaceCleanup.add(subscribeToVisibleNotes(state.projects, (notes) => {
+        state.notes = notes;
+        renderNotes();
+      }, console.error));
+
       renderSidebarProjects();
       renderProjectsGrid();
       renderTeamGrid();
       renderTasks();
-    }, console.error);
+      renderNotes();
+    }, console.error));
   } catch (err) {
     hydrationStarted = false;
     console.error("Failed to load workspace data:", err);

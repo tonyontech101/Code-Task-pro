@@ -25,7 +25,9 @@ const COLLECTIONS = {
   projects: "projects",
   members: "members",
   notes: "notes",
-  invitations: "invitations"
+  teamNotes: "teamNotes",
+  invitations: "invitations",
+  messages: "messages"
 };
 
 const ONLINE_STALE_MS = 2 * 60 * 1000;
@@ -56,6 +58,38 @@ function displayNameFromUser(user) {
   return user.displayName || user.email?.split("@")[0] || "User";
 }
 
+function currentUserMeta() {
+  const user = auth.currentUser;
+  return {
+    uid: user?.uid || "",
+    name: displayNameFromUser(user || {}),
+    email: normalizeEmail(user?.email || "")
+  };
+}
+
+function accessibleWorkspaceUids(projects = state.projects) {
+  const uid = auth.currentUser?.uid;
+  return [...new Set([
+    uid,
+    ...projects.map((project) => project.ownerUid).filter(Boolean)
+  ].filter(Boolean))];
+}
+
+function noteParticipantUids(projects = state.projects, members = state.members) {
+  const uid = auth.currentUser?.uid;
+  return [...new Set([
+    uid,
+    ...projects.map((project) => project.ownerUid).filter(Boolean),
+    ...members.map((member) => member.uid).filter(Boolean)
+  ].filter(Boolean))];
+}
+
+function workspaceUidForCurrentUser(projects = state.projects) {
+  return projects.find((project) => project.ownerUid && project.ownerUid !== auth.currentUser?.uid)?.ownerUid
+    || auth.currentUser?.uid
+    || "";
+}
+
 function getOnlineStatus(profile = {}) {
   const lastSeen = typeof profile.lastSeen === "object" && typeof profile.lastSeen?.seconds === "number"
     ? profile.lastSeen.seconds * 1000
@@ -78,6 +112,33 @@ function sortByNewest(items) {
 async function fetchCollection(name) {
   const snapshot = await getDocs(userCollection(name));
   return sortByNewest(snapshot.docs.map(hydrateDoc));
+}
+
+async function fetchTeamNotes(projects = state.projects) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return [];
+
+  const snapshot = await getDocs(query(
+    collection(db, COLLECTIONS.teamNotes),
+    where("participantUids", "array-contains", uid)
+  ));
+
+  const workspaces = new Set(accessibleWorkspaceUids(projects));
+  return snapshot.docs
+    .map((noteDoc) => ({ id: noteDoc.id, teamNoteId: noteDoc.id, ...noteDoc.data(), scope: "team" }))
+    .filter((note) => !note.workspaceUid || workspaces.has(note.workspaceUid));
+}
+
+export async function fetchVisibleNotes(projects = state.projects) {
+  const [personalNotes, teamNotes] = await Promise.all([
+    fetchCollection(COLLECTIONS.notes),
+    fetchTeamNotes(projects)
+  ]);
+
+  return sortByNewest([
+    ...personalNotes.map((note) => ({ ...note, scope: note.scope || "personal", storage: "personal" })),
+    ...teamNotes.map((note) => ({ ...note, storage: "team" }))
+  ]);
 }
 
 function uniqueByTaskOwner(items) {
@@ -163,13 +224,13 @@ async function enrichMembersWithProfiles(members) {
 // No local seeding: fetch notes directly from Firestore for the authenticated user.
 
 export async function loadWorkspaceData() {
-  const [projects, members, notes, pendingInvitations] = await Promise.all([
+  const [projects, members, pendingInvitations] = await Promise.all([
     fetchCollection(COLLECTIONS.projects),
     fetchCollection(COLLECTIONS.members),
-    fetchCollection(COLLECTIONS.notes),
     fetchPendingInvitations()
   ]);
   const tasks = await fetchVisibleTasks(projects);
+  const notes = await fetchVisibleNotes(projects);
 
   state.tasks = tasks;
   state.projects = projects;
@@ -236,6 +297,39 @@ export function subscribeToVisibleTasks(projects = state.projects, onChange, onE
       where("projectId", "==", project.sourceProjectId)
     ), (snapshot) => addSharedSnapshot(`${project.id}:source`, snapshot), onError));
   });
+
+  return () => subscriptions.forEach((unsubscribe) => unsubscribe());
+}
+
+export function subscribeToVisibleNotes(projects = state.projects, onChange, onError) {
+  const uid = requireUserId();
+  const latestBySource = new Map();
+  const workspaces = new Set(accessibleWorkspaceUids(projects));
+
+  const emit = () => {
+    onChange(sortByNewest([...latestBySource.values()].flat()));
+  };
+
+  const subscriptions = [
+    onSnapshot(userCollection(COLLECTIONS.notes), (snapshot) => {
+      latestBySource.set("personal", snapshot.docs.map((noteDoc) => ({
+        id: noteDoc.id,
+        ...noteDoc.data(),
+        scope: noteDoc.data().scope || "personal",
+        storage: "personal"
+      })));
+      emit();
+    }, onError),
+    onSnapshot(query(
+      collection(db, COLLECTIONS.teamNotes),
+      where("participantUids", "array-contains", uid)
+    ), (snapshot) => {
+      latestBySource.set("team", snapshot.docs
+        .map((noteDoc) => ({ id: noteDoc.id, teamNoteId: noteDoc.id, ...noteDoc.data(), scope: "team", storage: "team" }))
+        .filter((note) => !note.workspaceUid || workspaces.has(note.workspaceUid)));
+      emit();
+    }, onError)
+  ];
 
   return () => subscriptions.forEach((unsubscribe) => unsubscribe());
 }
@@ -365,29 +459,117 @@ export async function deleteMemberRecord(id) {
     projectIds.forEach((projectId) => {
       batch.delete(doc(db, "users", targetMemberUid, COLLECTIONS.projects, `shared_${projectId}`));
     });
+
+    const teamNotesQuery = query(
+      collection(db, COLLECTIONS.teamNotes),
+      where("participantUids", "array-contains", targetMemberUid)
+    );
+    const teamNotesSnapshot = await getDocs(teamNotesQuery);
+    teamNotesSnapshot.forEach((noteDoc) => {
+      if (noteDoc.data().workspaceUid !== requireUserId()) return;
+      batch.update(noteDoc.ref, {
+        participantUids: arrayRemove(targetMemberUid),
+        updatedAt: Date.now()
+      });
+    });
   }
 
   await batch.commit();
 }
 
 export async function createNoteRecord(payload) {
+  const creator = currentUserMeta();
   const timestamp = Date.now();
-  const ref = await addDoc(userCollection(COLLECTIONS.notes), {
+  const basePayload = {
     ...payload,
+    creatorUid: creator.uid,
+    creatorName: creator.name,
+    creatorEmail: creator.email,
     createdAt: timestamp,
     updatedAt: timestamp
+  };
+
+  if (payload.scope === "team") {
+    const ref = await addDoc(collection(db, COLLECTIONS.teamNotes), {
+      ...basePayload,
+      scope: "team",
+      workspaceUid: workspaceUidForCurrentUser(),
+      participantUids: noteParticipantUids()
+    });
+
+    return { id: ref.id, teamNoteId: ref.id, ...basePayload, scope: "team", storage: "team" };
+  }
+
+  const ref = await addDoc(userCollection(COLLECTIONS.notes), {
+    ...basePayload,
+    scope: "personal"
   });
 
-  return { id: ref.id, ...payload, createdAt: timestamp, updatedAt: timestamp };
+  return { id: ref.id, ...basePayload, scope: "personal", storage: "personal" };
 }
 
 export async function updateNoteRecord(id, payload) {
   const updatedAt = Date.now();
+  const existing = state.notes.find((note) => String(note.id) === String(id));
+
+  if (existing?.storage === "team" || existing?.scope === "team") {
+    const noteId = existing.teamNoteId || id;
+    if (payload.scope === "personal") {
+      const personalPayload = {
+        ...existing,
+        ...payload,
+        scope: "personal",
+        updatedAt,
+        storage: "personal"
+      };
+      delete personalPayload.id;
+      delete personalPayload.teamNoteId;
+      delete personalPayload.storage;
+      delete personalPayload.participantUids;
+      delete personalPayload.workspaceUid;
+
+      const batch = writeBatch(db);
+      const personalRef = doc(userCollection(COLLECTIONS.notes));
+      batch.set(personalRef, personalPayload);
+      batch.delete(doc(db, COLLECTIONS.teamNotes, noteId));
+      await batch.commit();
+      return { ...personalPayload, id: personalRef.id, storage: "personal" };
+    }
+
+    await updateDoc(doc(db, COLLECTIONS.teamNotes, noteId), { ...payload, scope: "team", updatedAt });
+    return { ...payload, scope: "team", updatedAt, storage: "team" };
+  }
+
+  if (payload.scope === "team") {
+    const teamPayload = {
+      ...existing,
+      ...payload,
+      scope: "team",
+      updatedAt,
+      workspaceUid: workspaceUidForCurrentUser(),
+      participantUids: noteParticipantUids()
+    };
+    delete teamPayload.id;
+    delete teamPayload.storage;
+
+    const batch = writeBatch(db);
+    const teamRef = doc(collection(db, COLLECTIONS.teamNotes));
+    batch.set(teamRef, teamPayload);
+    batch.delete(userDoc(COLLECTIONS.notes, id));
+    await batch.commit();
+    return { ...teamPayload, id: teamRef.id, teamNoteId: teamRef.id, storage: "team" };
+  }
+
   await updateDoc(userDoc(COLLECTIONS.notes, id), { ...payload, updatedAt });
-  return { ...payload, updatedAt };
+  return { ...payload, updatedAt, storage: "personal" };
 }
 
 export async function deleteNoteRecord(id) {
+  const existing = state.notes.find((note) => String(note.id) === String(id));
+  if (existing?.storage === "team" || existing?.scope === "team") {
+    await deleteDoc(doc(db, COLLECTIONS.teamNotes, existing.teamNoteId || id));
+    return;
+  }
   await deleteDoc(userDoc(COLLECTIONS.notes, id));
 }
 
@@ -628,6 +810,18 @@ export async function acceptInvitationRecord(invitationId) {
     updatedAt: timestamp
   });
 
+  const teamNotesQuery = query(
+    collection(db, COLLECTIONS.teamNotes),
+    where("workspaceUid", "==", inv.senderUid)
+  );
+  const teamNotesSnapshot = await getDocs(teamNotesQuery);
+  teamNotesSnapshot.forEach((noteDoc) => {
+    batch.update(noteDoc.ref, {
+      participantUids: arrayUnion(uid),
+      updatedAt: timestamp
+    });
+  });
+
   batch.set(doc(db, "users", uid, COLLECTIONS.projects, `shared_${inv.projectId}`), {
     name: inv.projectName,
     desc: inv.projectDesc || `Shared by ${inv.senderName}`,
@@ -668,4 +862,41 @@ export async function declineInvitationRecord(invitationId) {
   if (inv.targetUid !== uid && targetEmail !== currentEmail) throw new Error("NOT_INVITATION_TARGET");
 
   await updateDoc(invRef, { status: "declined", declinedAt: Date.now() });
+}
+
+// ── Messaging (Direct Messages) ───────────────────────────────
+export async function sendChatMessageRecord(receiverUid, text) {
+  const senderUid = requireUserId();
+  const timestamp = Date.now();
+  const chatId = [senderUid, receiverUid].sort().join('_');
+  
+  const ref = await addDoc(collection(db, COLLECTIONS.messages), {
+    chatId,
+    senderUid,
+    receiverUid,
+    text,
+    timestamp,
+    read: false,
+    createdAt: serverTimestamp()
+  });
+
+  return { id: ref.id, senderUid, receiverUid, text, timestamp };
+}
+
+export function subscribeToChatMessages(otherUid, onUpdate, onError) {
+  const myUid = requireUserId();
+  const chatId = [myUid, otherUid].sort().join('_');
+  
+  // Query for messages in this specific chat
+  const q = query(
+    collection(db, COLLECTIONS.messages),
+    where("chatId", "==", chatId)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const messages = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    onUpdate(messages);
+  }, onError);
 }

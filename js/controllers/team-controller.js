@@ -22,6 +22,10 @@ function memberInitials(member) {
     .slice(0, 2) || "TM";
 }
 
+function inlineJsArg(value) {
+  return escapeHtml(JSON.stringify(value));
+}
+
 function ownedProjects() {
   const uid = auth.currentUser?.uid;
   return state.projects.filter(project => !project.ownerUid || project.ownerUid === uid);
@@ -104,7 +108,7 @@ export function renderTeamGrid() {
     const taskCount = getMemberTaskCount(m, memberProjects);
     const joinedAt = m.joinedAt || m.createdAt;
     const status = m.status === "online" ? "online" : "offline";
-    const memberId = JSON.stringify(m.id);
+    const memberId = inlineJsArg(m.id);
     const avatar = m.photoURL
       ? `<img src="${escapeHtml(m.photoURL)}" alt="" class="w-12 h-12 rounded-full object-cover border border-white/10" />`
       : `<div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[15px] font-bold text-white shadow-lg shadow-black/20">${escapeHtml(initials)}</div>`;

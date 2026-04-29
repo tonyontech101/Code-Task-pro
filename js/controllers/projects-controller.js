@@ -3,10 +3,43 @@
  */
 
 import { state } from '../modules/state.js';
+import { auth } from '../../config/config.js';
 import { navigateToPage } from '../modules/navigation.js';
 import { formatDate, showToast, escapeHtml } from '../modules/utils.js';
-import { createProjectRecord, deleteProjectRecord } from '../modules/data-store.js';
+import { createProjectRecord, deleteProjectRecord, updateProjectRecord } from '../modules/data-store.js';
 import { renderTasks, renderSidebarProjects } from './dashboard-controller.js';
+
+function isOwnProject(project) {
+  return !project?.ownerUid || project.ownerUid === auth.currentUser?.uid;
+}
+
+function memberLabel(member) {
+  return member.name || member.displayName || member.email?.split("@")[0] || "Team Member";
+}
+
+function renderProjectMemberOptions(containerId, selectedIds = []) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (state.members.length === 0) {
+    container.innerHTML = `<p class="text-[12px] text-gray-600 italic">No team members available.</p>`;
+    return;
+  }
+
+  const selected = new Set(selectedIds);
+  container.innerHTML = state.members.map((member) => {
+    const id = String(member.id);
+    return `
+      <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-overlay/40 hover:bg-overlay text-[12px] text-gray-400 cursor-pointer">
+        <input type="checkbox" value="${escapeHtml(id)}" ${selected.has(id) ? "checked" : ""} class="accent-cyan" />
+        <span class="truncate">${escapeHtml(memberLabel(member))}</span>
+      </label>`;
+  }).join("");
+}
+
+function inlineJsArg(value) {
+  return escapeHtml(JSON.stringify(value));
+}
 
 export function renderProjectsGrid(highlightName) {
   const grid  = document.getElementById("projectsGrid");
@@ -41,8 +74,8 @@ export function renderProjectsGrid(highlightName) {
     const isActive  = highlightName === p.name;
     const pctDone   = taskCount ? Math.round((doneCount/taskCount)*100) : 0;
     const projMembers = (p.memberIds || []).map(id => state.members.find(m => m.id === id)).filter(Boolean);
-    const projectId = JSON.stringify(p.id);
-    const projectName = JSON.stringify(p.name);
+    const projectId = inlineJsArg(p.id);
+    const projectName = inlineJsArg(p.name);
     const ownerName = p.ownerName || p.ownerEmail?.split("@")[0] || (p.ownerUid ? "Project owner" : "You");
     
     const avatars = projMembers.slice(0, 3).map(m => {
@@ -148,10 +181,104 @@ export async function addNewProject() {
   }
 }
 
+export function prepareNewProjectModal() {
+  renderProjectMemberOptions("newProjectMembers");
+  document.getElementById("projectModalBackdrop")?.classList.remove("hidden");
+}
+
+export function closeEditProjectModal() {
+  document.getElementById("editProjectBackdrop")?.classList.add("hidden");
+}
+
+export function openEditProjectModal(id) {
+  const project = state.projects.find((item) => item.id === id);
+  if (!project) {
+    showToast("Project not found", "error");
+    return;
+  }
+
+  if (!isOwnProject(project)) {
+    showToast("Only the project owner can edit this project", "error");
+    return;
+  }
+
+  document.getElementById("editProjectId").value = project.id;
+  document.getElementById("editProjectName").value = project.name || "";
+  document.getElementById("editProjectDesc").value = project.desc || "";
+  document.getElementById("editProjectColor").value = project.color || "#00d4c8";
+  document.getElementById("editProjectStatus").value = project.status || "active";
+  renderProjectMemberOptions("editProjectMembers", project.memberIds || []);
+  document.getElementById("editProjectBackdrop")?.classList.remove("hidden");
+}
+
+export async function saveEditProject() {
+  const id = document.getElementById("editProjectId")?.value;
+  const project = state.projects.find((item) => item.id === id);
+  if (!project) {
+    showToast("Project not found", "error");
+    return;
+  }
+
+  if (!isOwnProject(project)) {
+    showToast("Only the project owner can edit this project", "error");
+    return;
+  }
+
+  const name = document.getElementById("editProjectName").value.trim();
+  const desc = document.getElementById("editProjectDesc").value.trim();
+  const color = document.getElementById("editProjectColor").value;
+  const status = document.getElementById("editProjectStatus").value;
+  const memberIds = window.getCheckedMemberIds("editProjectMembers");
+
+  if (!name) {
+    showToast("Please enter a project name", "error");
+    return;
+  }
+
+  const duplicate = state.projects.some((item) => (
+    item.id !== id && item.name.toLowerCase() === name.toLowerCase()
+  ));
+  if (duplicate) {
+    showToast("A project with this name already exists", "error");
+    return;
+  }
+
+  try {
+    const previousName = project.name;
+    const updates = await updateProjectRecord(id, {
+      name,
+      desc: desc || "No description",
+      color,
+      status,
+      memberIds
+    }, previousName);
+
+    Object.assign(project, updates);
+    state.tasks.forEach((task) => {
+      if (task.project === previousName) task.project = name;
+    });
+    if (state.currentProject === previousName) state.currentProject = name;
+
+    closeEditProjectModal();
+    renderSidebarProjects();
+    renderProjectsGrid(name);
+    renderTasks();
+    window.renderTeamGrid?.();
+    showToast(`Project "${name}" updated`);
+  } catch (err) {
+    showToast("Failed to update project", "error");
+    console.error(err);
+  }
+}
+
 export async function deleteProject(id) {
   try {
     const p = state.projects.find(x => x.id === id);
     if (!p) return;
+    if (!isOwnProject(p)) {
+      showToast("Only the project owner can delete this project", "error");
+      return;
+    }
     if (!confirm(`Delete "${p.name}"? Tasks in this project will become unassigned.`)) return;
 
     await deleteProjectRecord(id, p.name);

@@ -4,10 +4,19 @@
 
 import { state } from '../modules/state.js';
 import { getContactGradient, getStatusColor, showToast, escapeHtml } from '../modules/utils.js';
-import { acceptInvitationRecord, declineInvitationRecord, loadWorkspaceData } from '../modules/data-store.js';
+import { 
+  acceptInvitationRecord, 
+  declineInvitationRecord, 
+  loadWorkspaceData,
+  sendChatMessageRecord,
+  subscribeToChatMessages
+} from '../modules/data-store.js';
+import { auth } from '../../config/config.js';
 import { renderSidebarProjects, renderTasks } from './dashboard-controller.js';
 import { renderProjectsGrid } from './projects-controller.js';
 import { renderTeamGrid } from './team-controller.js';
+
+let activeMessageSubscription = null;
 
 function timeAgo(timestamp) {
   if (!timestamp) return "Just now";
@@ -37,6 +46,10 @@ function invitationToInboxItem(invitation) {
     read: false,
     invitation
   };
+}
+
+function inlineJsArg(value) {
+  return escapeHtml(JSON.stringify(value));
 }
 
 function getVisibleInboxItems() {
@@ -114,7 +127,8 @@ function renderInboxItem(item) {
     return colors[type] || colors.system;
   };
 
-  const itemId = JSON.stringify(item.id);
+  const itemId = inlineJsArg(item.id);
+  const invitationId = inlineJsArg(item.invitationId);
   const isInvitation = item.type === "invitation";
 
   return `
@@ -129,8 +143,8 @@ function renderInboxItem(item) {
         ${item.project ? `<span class="inbox-item-project">${escapeHtml(item.project)}</span>` : ''}
         ${isInvitation ? `
           <div class="inbox-actions">
-            <button class="inbox-action-btn inbox-accept" onclick="event.stopPropagation(); window.acceptInvitation('${item.invitationId}')">Accept</button>
-            <button class="inbox-action-btn inbox-decline" onclick="event.stopPropagation(); window.declineInvitation('${item.invitationId}')">Decline</button>
+            <button class="inbox-action-btn inbox-accept" onclick="event.stopPropagation(); window.acceptInvitation(${invitationId})">Accept</button>
+            <button class="inbox-action-btn inbox-decline" onclick="event.stopPropagation(); window.declineInvitation(${invitationId})">Decline</button>
           </div>` : ''}
       </div>
       ${!item.read ? '<div class="inbox-unread-dot"></div>' : ''}
@@ -141,30 +155,75 @@ function renderInboxItem(item) {
 }
 
 export function openChat(contactId) {
+  // 1. Cleanup previous subscription
+  if (activeMessageSubscription) {
+    activeMessageSubscription();
+    activeMessageSubscription = null;
+  }
+
+  // 2. Set active contact and clear stale container
   state.activeChatContactId = contactId;
+  const container = document.getElementById('chatMessages');
+  if (container) {
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-full opacity-30">
+        <div class="w-6 h-6 border-2 border-cyan border-t-transparent rounded-full animate-spin"></div>
+      </div>`;
+  }
+
   const notifView = document.getElementById('inboxNotificationsView');
   const chatView  = document.getElementById('inboxChatView');
   if (notifView) notifView.classList.add('hidden');
   if (chatView)  chatView.classList.remove('hidden');
 
-  const contact = state.chatContacts.find(c => c.id === contactId);
+  // 3. Find contact and update header
+  const contact = state.members.find(m => m.uid === contactId);
   if (!contact) return;
 
   const headerAvatar = document.getElementById('chatHeaderAvatar');
   const headerName   = document.getElementById('chatHeaderName');
   const headerStatus = document.getElementById('chatHeaderStatus');
 
+  const name = contact.name || contact.displayName || contact.email?.split('@')[0] || "User";
+  const initials = (name[0] || "U").toUpperCase();
+
   if (headerAvatar) {
     headerAvatar.className = `chat-header-avatar bg-gradient-to-br ${getContactGradient(contactId)}`;
-    headerAvatar.textContent = contact.avatar;
+    if (contact.photoURL) {
+      headerAvatar.innerHTML = `<img src="${escapeHtml(contact.photoURL)}" class="w-full h-full rounded-full object-cover" />`;
+    } else {
+      headerAvatar.textContent = initials;
+    }
   }
-  if (headerName) headerName.textContent = contact.name;
+  if (headerName) headerName.textContent = name;
   if (headerStatus) {
-    headerStatus.textContent = contact.status.charAt(0).toUpperCase() + contact.status.slice(1);
-    headerStatus.className = `chat-header-status chat-status-${contact.status}`;
+    const status = contact.status || "offline";
+    headerStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    headerStatus.className = `chat-header-status chat-status-${status}`;
   }
 
-  renderChatMessages();
+  // 4. Reset scroll position for new conversation
+  const scrollContainer = document.getElementById('chatMessagesContainer');
+  if (scrollContainer) scrollContainer.scrollTop = 0;
+
+  // 5. Subscribe to real-time messages
+  activeMessageSubscription = subscribeToChatMessages(contactId, (messages) => {
+    // Only update if we are still looking at this contact
+    if (state.activeChatContactId !== contactId) return;
+
+    state.chatConversations[contactId] = messages.map(msg => ({
+      from: msg.senderUid === auth.currentUser.uid ? 'me' : 'them',
+      text: msg.text,
+      time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' : new Date(msg.timestamp).toLocaleDateString()
+    }));
+    
+    renderChatMessages();
+    renderSidebarChatList();
+  }, (err) => {
+    console.error("Message subscription error:", err);
+  });
+
   renderSidebarChatList();
 }
 
@@ -173,10 +232,79 @@ export function renderChatMessages() {
   if (!container || !state.activeChatContactId) return;
 
   const msgs = state.chatConversations[state.activeChatContactId] || [];
-  const contact = state.chatContacts.find(c => c.id === state.activeChatContactId);
+  const contact = state.members.find(m => m.uid === state.activeChatContactId);
 
   if (msgs.length === 0) {
-    container.innerHTML = `<div class="chat-empty"><p class="text-[14px] text-gray-500 font-medium mt-3">Start a conversation</p></div>`;
+    if (!contact) {
+      container.innerHTML = `<div class="chat-empty"><p class="text-[14px] text-gray-500 font-medium mt-3">Select a contact to start chatting</p></div>`;
+      return;
+    }
+
+    const name = contact.name || contact.displayName || contact.email?.split('@')[0] || "Team Member";
+    const initials = (name[0] || "U").toUpperCase();
+    const avatarHtml = contact.photoURL 
+      ? `<img src="${escapeHtml(contact.photoURL)}" class="w-16 h-16 rounded-full object-cover" />`
+      : `<div class="w-16 h-16 rounded-full bg-gradient-to-br ${getContactGradient(contact.uid)} flex items-center justify-center text-xl font-bold text-white">${initials}</div>`;
+
+    const teammateTasks = state.tasks.filter(t => t.ownerUid === contact.uid || (t.assignee && t.assignee.uid === contact.uid));
+    const activeTasksCount = teammateTasks.filter(t => !t.done).length;
+
+    container.innerHTML = `
+      <div class="chat-empty-state flex flex-col items-center justify-center h-full py-16 px-12 animate-in fade-in duration-700">
+        <div class="max-w-xl w-full flex flex-col items-center text-center">
+          <div class="flex flex-col items-center mb-10">
+            <div class="relative mb-6">
+              ${avatarHtml}
+              <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-base rounded-full flex items-center justify-center border-2 border-surface">
+                <div class="w-2.5 h-2.5 rounded-full ${getStatusColor(contact.status || 'offline')}"></div>
+              </div>
+            </div>
+            <h3 class="text-[26px] font-bold text-white tracking-tight mb-1">${escapeHtml(name)}</h3>
+            <p class="text-[14px] text-gray-500 font-medium">${escapeHtml(contact.role || "Team Member")} \u2022 ${escapeHtml(contact.email || "")}</p>
+          </div>
+
+          <div class="flex gap-6 mb-12">
+            <div class="px-6 py-3 bg-elevated border border-white/5 rounded-2xl min-w-[100px]">
+              <p class="text-[10px] text-gray-600 font-bold uppercase tracking-wider mb-1">Active Tasks</p>
+              <p class="text-[20px] font-mono font-bold text-gray-200">${activeTasksCount}</p>
+            </div>
+            <div class="px-6 py-3 bg-elevated border border-white/5 rounded-2xl min-w-[100px]">
+              <p class="text-[10px] text-gray-600 font-bold uppercase tracking-wider mb-1">Completed</p>
+              <p class="text-[20px] font-mono font-bold text-gray-200">${teammateTasks.filter(t => t.done).length}</p>
+            </div>
+          </div>
+
+          <div class="w-full mb-12">
+            <h4 class="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] mb-4">Suggested Starters</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <button class="flex flex-col items-center gap-3 p-5 rounded-2xl bg-elevated border border-white/5 hover:border-white/10 hover:bg-hover transition-all group" onclick="document.getElementById('chatInput').value = 'Hey ${escapeHtml(name.split(' ')[0])}, checking in on status'; document.getElementById('chatInput').focus();">
+                <div class="w-10 h-10 rounded-xl bg-cyan/10 flex items-center justify-center text-cyan">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <p class="text-[13px] font-bold text-gray-200">Check Status</p>
+                  <p class="text-[11px] text-gray-500">Ask for an update</p>
+                </div>
+              </button>
+              <button class="flex flex-col items-center gap-3 p-5 rounded-2xl bg-elevated border border-white/5 hover:border-white/10 hover:bg-hover transition-all group" onclick="document.getElementById('chatInput').value = 'Let\\'s sync on current tasks when you have a moment'; document.getElementById('chatInput').focus();">
+                <div class="w-10 h-10 rounded-xl bg-purple/10 flex items-center justify-center text-purple">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <div>
+                  <p class="text-[13px] font-bold text-gray-200">Request Sync</p>
+                  <p class="text-[11px] text-gray-500">Schedule check-in</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="max-w-xs mx-auto p-4 border-t border-white/5">
+            <p class="text-[12px] text-gray-600 leading-relaxed italic">
+              Messages are synced in real-time across your workspace.
+            </p>
+          </div>
+        </div>
+      </div>`;
     return;
   }
 
@@ -205,20 +333,43 @@ export function renderSidebarChatList(query = "") {
   const list = document.getElementById('sidebarChatList');
   if (!list) return;
 
+  const currentUid = auth.currentUser?.uid;
+  const contacts = state.members
+    .filter(m => m.uid && m.uid !== currentUid)
+    .map(m => ({
+      uid: m.uid,
+      name: m.name || m.displayName || m.email?.split('@')[0] || "Team Member",
+      avatar: (m.name || m.displayName || m.email || "U")[0].toUpperCase(),
+      status: m.status || "offline",
+      role: m.role || "Member",
+      email: m.email,
+      photoURL: m.photoURL,
+      unreadCount: 0 
+    }));
+
   const filtered = query 
-    ? state.chatContacts.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
-    : state.chatContacts;
+    ? contacts.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+    : contacts;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="p-4 text-center text-xs text-gray-500">No teammates found</div>`;
+    return;
+  }
 
   list.innerHTML = filtered.map(c => {
-    const isActive = c.id === state.activeChatContactId;
-    const conversation = state.chatConversations[c.id] || [];
+    const isActive = state.activeChatContactId && c.uid === state.activeChatContactId;
+    const conversation = state.chatConversations[c.uid] || [];
     const lastMsg = conversation[conversation.length - 1];
     const preview = lastMsg ? (lastMsg.from === 'me' ? 'You: ' : '') + lastMsg.text : 'No messages yet';
 
+    const avatarHtml = c.photoURL 
+      ? `<img src="${escapeHtml(c.photoURL)}" class="sidebar-chat-avatar object-cover" />`
+      : `<div class="sidebar-chat-avatar bg-gradient-to-br ${getContactGradient(c.uid)}">${c.avatar}</div>`;
+
     return `
-      <button class="sidebar-chat-contact ${isActive ? 'sidebar-chat-active' : ''}" onclick="window.openChat('${c.id}')">
+      <button class="sidebar-chat-contact ${isActive ? 'sidebar-chat-active' : ''}" onclick="window.openChat('${c.uid}')">
         <div class="sidebar-chat-avatar-wrap">
-          <div class="sidebar-chat-avatar bg-gradient-to-br ${getContactGradient(c.id)}">${c.avatar}</div>
+          ${avatarHtml}
           <div class="sidebar-chat-status-dot ${getStatusColor(c.status)}"></div>
         </div>
         <div class="sidebar-chat-info">
@@ -251,28 +402,24 @@ export function clearAllInbox() {
   renderInbox();
 }
 
-export function sendChatMessage() {
+export async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   if (!input || !input.value.trim() || !state.activeChatContactId) return;
 
-  const msg = {
-    from: 'me',
-    text: input.value,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    date: 'Today'
-  };
+  const text = input.value;
+  input.value = ''; // Optimistic clear
 
-  if (!state.chatConversations[state.activeChatContactId]) {
-    state.chatConversations[state.activeChatContactId] = [];
+  try {
+    await sendChatMessageRecord(state.activeChatContactId, text);
+    // UI will be updated by the real-time subscription
+  } catch (err) {
+    showToast("Failed to send message", "error");
+    console.error(err);
+    input.value = text; // Restore if failed
   }
-  state.chatConversations[state.activeChatContactId].push(msg);
-  
-  input.value = '';
-  renderChatMessages();
 }
 
 export function filterSidebarChats(query) {
-  // Logic to filter the sidebar chat list
   renderSidebarChatList(query);
 }
 

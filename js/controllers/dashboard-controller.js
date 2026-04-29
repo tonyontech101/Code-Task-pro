@@ -23,7 +23,15 @@ export function renderTasks() {
     const projMatch     = state.currentProject  === "all" || t.project  === state.currentProject;
     const labelMatch    = state.currentLabel    === "all" || t.label    === state.currentLabel;
     const priorityMatch = state.currentPriority === "all" || t.priority === state.currentPriority;
-    return projMatch && labelMatch && priorityMatch;
+    
+    // Search filter
+    const search = (state.tasksSearchQuery || "").toLowerCase();
+    const searchMatch = !search || 
+      t.title.toLowerCase().includes(search) || 
+      (t.label && t.label.toLowerCase().includes(search)) ||
+      (t.desc && t.desc.toLowerCase().includes(search));
+
+    return projMatch && labelMatch && priorityMatch && searchMatch;
   });
 
   if (filtered.length === 0) {

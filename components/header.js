@@ -25,6 +25,27 @@ class AppHeader extends HTMLElement {
       </header>
     `;
 
+    // Search functionality
+    const searchInput = this.querySelector('.search-bar input');
+    if (searchInput) {
+      (async () => {
+        const { state } = await import('../js/modules/state.js');
+        const { debounce } = await import('../js/modules/performance.js');
+        const { renderTasks } = await import('../js/controllers/dashboard-controller.js');
+        const { navigateToPage } = await import('../js/modules/navigation.js');
+
+        const handleSearch = debounce((e) => {
+          state.tasksSearchQuery = e.target.value;
+          if (state.activePageId !== 'pageDashboard') {
+            navigateToPage('pageDashboard');
+          }
+          renderTasks();
+        }, 300);
+
+        searchInput.addEventListener('input', handleSearch);
+      })();
+    }
+
     // Listen for auth-ready event to update user info
     window.addEventListener("auth-ready", (e) => {
       const user = e.detail.user;
