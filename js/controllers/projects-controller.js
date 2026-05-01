@@ -6,7 +6,7 @@ import { state } from '../modules/state.js';
 import { auth } from '../../config/config.js';
 import { navigateToPage } from '../modules/navigation.js';
 import { formatDate, showToast, escapeHtml } from '../modules/utils.js';
-import { createProjectRecord, deleteProjectRecord, updateProjectRecord } from '../modules/data-store.js';
+import { createProjectRecord, deleteProjectRecord, updateProjectRecord, createInboxItem } from '../modules/data-store.js';
 import { renderTasks, renderSidebarProjects } from './dashboard-controller.js';
 
 function isOwnProject(project) {
@@ -168,6 +168,21 @@ export async function addNewProject() {
     const project = await createProjectRecord({ name, desc: desc || "No description", color, status, memberIds: mIds });
     state.projects.unshift(project);
 
+    // Notify members
+    mIds.forEach(mId => {
+      const member = state.members.find(m => String(m.id) === String(mId));
+      if (member && member.uid) {
+        createInboxItem(member.uid, {
+          type: "project",
+          icon: "project",
+          title: "Added to project",
+          body: `You were added to project "${name}" by ${auth.currentUser?.displayName || "a teammate"}`,
+          project: name,
+          time: "Just now"
+        }).catch(console.error);
+      }
+    });
+
     renderSidebarProjects();
     renderProjectsGrid();
 
@@ -281,7 +296,23 @@ export async function deleteProject(id) {
     }
     if (!confirm(`Delete "${p.name}"? Tasks in this project will become unassigned.`)) return;
 
+    const membersToNotify = (p.memberIds || []).map(id => state.members.find(m => String(m.id) === String(id))).filter(Boolean);
+    
     await deleteProjectRecord(id, p.name);
+
+    // Notify members
+    membersToNotify.forEach(member => {
+      if (member.uid) {
+        createInboxItem(member.uid, {
+          type: "project",
+          icon: "project",
+          title: "Project deleted",
+          body: `Project "${p.name}" was deleted by ${auth.currentUser?.displayName || "the owner"}`,
+          project: p.name,
+          time: "Just now"
+        }).catch(console.error);
+      }
+    });
     state.tasks.forEach(t => { if (t.project === p.name) t.project = 'Unassigned'; });
     const idx = state.projects.findIndex(x => x.id === id);
     if (idx !== -1) state.projects.splice(idx, 1);

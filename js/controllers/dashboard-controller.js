@@ -5,7 +5,7 @@
 import { state } from '../modules/state.js';
 import { navigateToPage } from '../modules/navigation.js';
 import { showToast, escapeHtml } from '../modules/utils.js';
-import { createTaskRecord, deleteTaskRecord, updateTaskRecord } from '../modules/data-store.js';
+import { createTaskRecord, deleteTaskRecord, updateTaskRecord, createInboxItem } from '../modules/data-store.js';
 
 function getTaskKey(task) {
   return `${task.ownerUid || "local"}:${task.id}`;
@@ -127,6 +127,27 @@ export async function deleteTask(id) {
         return;
       }
       await deleteTaskRecord(task.id);
+      
+      // Notify members if it belongs to a project
+      if (task.project && task.project !== "Unassigned") {
+        const project = state.projects.find(p => p.name === task.project);
+        if (project && project.memberIds && project.memberIds.length > 0) {
+          project.memberIds.forEach(mId => {
+            const member = state.members.find(m => String(m.id) === String(mId));
+            if (member && member.uid) {
+              createInboxItem(member.uid, {
+                type: "task",
+                icon: "task",
+                title: "Task removed",
+                body: `Task "${task.title}" was deleted from project "${task.project}"`,
+                project: task.project,
+                time: "Just now"
+              }).catch(console.error);
+            }
+          });
+        }
+      }
+      
       state.tasks.splice(idx, 1);
       if (state.selectedTaskId === id || state.selectedTaskId === getTaskKey(task)) window.closeDetailPanel();
       renderTasks();

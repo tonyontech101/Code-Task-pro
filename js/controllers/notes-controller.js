@@ -3,7 +3,8 @@
  */
 
 import { state } from '../modules/state.js';
-import { createNoteRecord, deleteNoteRecord, updateNoteRecord } from '../modules/data-store.js';
+import { createNoteRecord, deleteNoteRecord, updateNoteRecord, createInboxItem } from '../modules/data-store.js';
+import { auth } from '../../config/config.js';
 import { escapeHtml, formatDate, showToast } from '../modules/utils.js';
 
 const NOTE_SAVE_DELAY_MS = 500;
@@ -289,6 +290,23 @@ export async function toggleNoteScope() {
       }
       renderNotes();
       renderEditorDetails(note);
+      
+      if (nextScope === "team") {
+        // Notify all members except current user
+        state.members.forEach(member => {
+          if (member.uid && member.uid !== auth.currentUser?.uid) {
+            createInboxItem(member.uid, {
+              type: "mention", // Or a new type 'note'
+              icon: "project",
+              title: "New shared note",
+              body: `${auth.currentUser?.displayName || "A teammate"} shared a new note: "${note.title || "Untitled"}"`,
+              project: "Notes",
+              time: "Just now"
+            }).catch(console.error);
+          }
+        });
+      }
+      
       showToast(nextScope === "team" ? "Note shared with team" : "Note moved to personal");
     } catch (err) {
       showToast("Failed to update note sharing", "error");

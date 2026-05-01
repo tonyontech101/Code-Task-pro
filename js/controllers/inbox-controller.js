@@ -9,7 +9,11 @@ import {
   declineInvitationRecord, 
   loadWorkspaceData,
   sendChatMessageRecord,
-  subscribeToChatMessages
+  subscribeToChatMessages,
+  updateInboxItemRecord,
+  deleteInboxItemRecord,
+  markAllInboxReadRecord,
+  clearInboxCollection
 } from '../modules/data-store.js';
 import { auth } from '../../config/config.js';
 import { renderSidebarProjects, renderTasks } from './dashboard-controller.js';
@@ -391,15 +395,25 @@ export function filterInbox(filter) {
   renderInbox();
 }
 
-export function markAllInboxRead() {
-  state.inboxItems.forEach(n => n.read = true);
-  renderInbox();
+export async function markAllInboxRead() {
+  try {
+    await markAllInboxReadRecord();
+    showToast("All notifications marked as read");
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to update notifications", "error");
+  }
 }
 
-export function clearAllInbox() {
+export async function clearAllInbox() {
   if (!confirm("Clear all notifications?")) return;
-  state.inboxItems = [];
-  renderInbox();
+  try {
+    await clearInboxCollection();
+    showToast("Inbox cleared");
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to clear inbox", "error");
+  }
 }
 
 export async function sendChatMessage() {
@@ -423,23 +437,44 @@ export function filterSidebarChats(query) {
   renderSidebarChatList(query);
 }
 
-export function toggleInboxRead(id) {
+export async function toggleInboxRead(id) {
   const item = state.inboxItems.find(n => n.id === id);
   if (item) {
-    item.read = !item.read;
-    renderInbox();
+    try {
+      await updateInboxItemRecord(id, { read: !item.read });
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to update notification", "error");
+    }
   }
 }
 
-export function dismissInboxItem(id) {
-  state.inboxItems = state.inboxItems.filter(n => n.id !== id);
-  renderInbox();
+export async function dismissInboxItem(id) {
+  try {
+    await deleteInboxItemRecord(id);
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to dismiss notification", "error");
+  }
 }
 
 export async function acceptInvitation(invitationId) {
   try {
+    const invitation = state.pendingInvitations.find(inv => inv.id === invitationId);
     await acceptInvitationRecord(invitationId);
     state.pendingInvitations = state.pendingInvitations.filter(inv => inv.id !== invitationId);
+    
+    if (invitation && invitation.senderUid) {
+      await createInboxItem(invitation.senderUid, {
+        type: "project",
+        icon: "project",
+        title: "Invitation accepted",
+        body: `${auth.currentUser?.displayName || "A user"} accepted your invitation to join "${invitation.projectName}"`,
+        project: invitation.projectName,
+        time: "Just now"
+      });
+    }
+
     await loadWorkspaceData();
     renderInbox();
     renderSidebarProjects();

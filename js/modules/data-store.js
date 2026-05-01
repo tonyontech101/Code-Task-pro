@@ -27,7 +27,8 @@ const COLLECTIONS = {
   notes: "notes",
   teamNotes: "teamNotes",
   invitations: "invitations",
-  messages: "messages"
+  messages: "messages",
+  inbox: "inbox"
 };
 
 const ONLINE_STALE_MS = 2 * 60 * 1000;
@@ -224,10 +225,11 @@ async function enrichMembersWithProfiles(members) {
 // No local seeding: fetch notes directly from Firestore for the authenticated user.
 
 export async function loadWorkspaceData() {
-  const [projects, members, pendingInvitations] = await Promise.all([
+  const [projects, members, pendingInvitations, inboxItems] = await Promise.all([
     fetchCollection(COLLECTIONS.projects),
     fetchCollection(COLLECTIONS.members),
-    fetchPendingInvitations()
+    fetchPendingInvitations(),
+    fetchCollection(COLLECTIONS.inbox)
   ]);
   const tasks = await fetchVisibleTasks(projects);
   const notes = await fetchVisibleNotes(projects);
@@ -237,6 +239,7 @@ export async function loadWorkspaceData() {
   state.members = await enrichMembersWithProfiles(members);
   state.notes = notes;
   state.pendingInvitations = pendingInvitations;
+  state.inboxItems = inboxItems;
 }
 
 export function subscribeToWorkspaceProjects(onChange, onError) {
@@ -582,6 +585,8 @@ export async function ensureUserProfile() {
   const snap = await getDoc(profileRef);
   const existingData = snap.exists() ? snap.data() : {};
 
+  const isNew = !snap.exists();
+
   await setDoc(profileRef, {
     uid: user.uid,
     displayName: displayNameFromUser(user),
@@ -592,6 +597,17 @@ export async function ensureUserProfile() {
     lastSeen: Date.now(),
     updatedAt: Date.now()
   }, { merge: true });
+
+  if (isNew) {
+    await createInboxItem(user.uid, {
+      type: "system",
+      icon: "system",
+      title: "Welcome to CodeTask Pro!",
+      body: "We're glad to have you here. Start by creating a project or inviting your team.",
+      project: null,
+      time: "Just now"
+    });
+  }
 }
 
 export async function getUserProfile(uid) {
@@ -899,4 +915,54 @@ export function subscribeToChatMessages(otherUid, onUpdate, onError) {
       .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     onUpdate(messages);
   }, onError);
+}
+
+// ── Inbox / Notifications ─────────────────────────────────────
+export function subscribeToInboxItems(onChange, onError) {
+  return onSnapshot(userCollection(COLLECTIONS.inbox), (snapshot) => {
+    onChange(sortByNewest(snapshot.docs.map(hydrateDoc)));
+  }, onError);
+}
+
+export async function createInboxItem(targetUid, payload) {
+  const timestamp = Date.now();
+  const data = {
+    ...payload,
+    createdAt: timestamp,
+    read: false
+  };
+  
+  // If targetUid is provided, we write to THAT user's inbox collection
+  const ref = targetUid 
+    ? collection(db, "users", targetUid, COLLECTIONS.inbox)
+    : userCollection(COLLECTIONS.inbox);
+    
+  await addDoc(ref, data);
+}
+
+export async function updateInboxItemRecord(id, payload) {
+  await updateDoc(userDoc(COLLECTIONS.inbox, id), { ...payload, updatedAt: Date.now() });
+}
+
+export async function deleteInboxItemRecord(id) {
+  await deleteDoc(userDoc(COLLECTIONS.inbox, id));
+}
+
+export async function markAllInboxReadRecord() {
+  const q = query(userCollection(COLLECTIONS.inbox), where("read", "==", false));
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
+  snapshot.forEach(d => {
+    batch.update(d.ref, { read: true, updatedAt: Date.now() });
+  });
+  await batch.commit();
+}
+
+export async function clearInboxCollection() {
+  const snapshot = await getDocs(userCollection(COLLECTIONS.inbox));
+  const batch = writeBatch(db);
+  snapshot.forEach(d => {
+    batch.delete(d.ref);
+  });
+  await batch.commit();
 }

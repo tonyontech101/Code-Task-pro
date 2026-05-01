@@ -74,7 +74,9 @@ import {
   subscribeToVisibleNotes,
   subscribeToWorkspaceMembers,
   subscribeToWorkspaceProjects,
-  subscribeToVisibleTasks
+  subscribeToVisibleTasks,
+  subscribeToInboxItems,
+  createInboxItem
 } from './modules/data-store.js';
 
 // Import Components (defining custom elements)
@@ -132,6 +134,7 @@ window.clearAllInbox = clearAllInbox;
 window.sendChatMessage = sendChatMessage;
 window.acceptInvitation = acceptInvitation;
 window.declineInvitation = declineInvitation;
+window.createInboxItem = createInboxItem;
 
 // Additional UI helper functions
 window.closeNewTaskModal = () => document.getElementById("modalBackdrop")?.classList.add("hidden");
@@ -247,6 +250,11 @@ async function hydrateAuthenticatedWorkspace() {
       renderTeamGrid();
       renderTasks();
       renderNotes();
+    }, console.error));
+
+    workspaceCleanup.add(subscribeToInboxItems((items) => {
+      state.inboxItems = items;
+      renderInbox();
     }, console.error));
   } catch (err) {
     hydrationStarted = false;
