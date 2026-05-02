@@ -602,7 +602,7 @@ export async function ensureUserProfile() {
     await createInboxItem(user.uid, {
       type: "system",
       icon: "system",
-      title: "Welcome to CodeTask Pro!",
+      title: "Welcome to CodeFlow!",
       body: "We're glad to have you here. Start by creating a project or inviting your team.",
       project: null,
       time: "Just now"

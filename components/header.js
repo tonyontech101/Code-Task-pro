@@ -9,7 +9,7 @@ class AppHeader extends HTMLElement {
             <path d="M2 17l10 5 10-5" stroke="#8b5cf6" stroke-width="2" fill="none"/>
             <path d="M2 12l10 5 10-5" stroke="#00d4c8" stroke-width="2" fill="none" opacity="0.6"/>
           </svg>
-          <span class="text-[15px] font-bold tracking-tight">CodeTask <span class="text-cyan">Pro</span></span>
+          <span class="text-[15px] font-bold tracking-tight">CodeFlow</span>
         </div>
 
         <div class="search-bar flex items-center gap-2 flex-1 max-w-md h-[34px] px-3 bg-elevated border border-white/[0.06] rounded-xl text-gray-500">

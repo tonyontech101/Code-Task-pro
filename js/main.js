@@ -353,7 +353,7 @@ if (window.codetaskAuthReady) hydrateAuthenticatedWorkspace();
 
 // Mock data initialization (or fetch from Firebase later)
 function init() {
-  console.log("Initializing CodeTask Pro...");
+  console.log("Initializing CodeFlow...");
   
   // Initial Renders
   if ("Notification" in window && Notification.permission === "granted") {

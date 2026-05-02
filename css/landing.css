@@ -910,6 +910,53 @@
 
   .footer-links a:hover { color: var(--text); }
 
+  .feedback-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 120;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg);
+    background: var(--cyan);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.36), 0 0 0 5px rgba(0,229,196,0.08);
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  .feedback-fab:hover {
+    transform: translateY(-2px);
+    opacity: 0.92;
+  }
+
+  .feedback-fab-tooltip {
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s, transform 0.18s;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.34);
+  }
+
+  .feedback-fab:hover .feedback-fab-tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+
   /* ANIMATIONS */
   .reveal {
     opacity: 0;
