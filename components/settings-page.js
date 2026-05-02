@@ -79,38 +79,55 @@ class AppSettingsPage extends HTMLElement {
 
           <!-- Notifications Section -->
           <div id="settings-notifications" class="settings-section p-10 max-w-2xl mx-auto hidden">
-            <h2 class="text-[24px] font-bold text-white mb-2">Notifications</h2>
-            <p class="text-[14px] text-gray-500 mb-8">Control when and how you get notified.</p>
+            <div class="mb-8">
+              <p class="text-[11px] font-bold uppercase tracking-widest text-cyan mb-2">Preferences</p>
+              <h2 class="text-[24px] font-bold text-white mb-2">Notifications</h2>
+              <p class="text-[14px] text-gray-500">Choose how CodeTask alerts you while you work.</p>
+            </div>
 
-            <div class="flex flex-col gap-4">
-              <div class="flex items-center justify-between p-5 bg-overlay border border-white/5 rounded-2xl">
+            <div class="settings-panel">
+              <div class="settings-panel-header">
                 <div>
-                  <h3 class="text-[14px] font-bold text-gray-200">Desktop Notifications</h3>
-                  <p class="text-[12px] text-gray-600">Receive alerts for new messages in other tabs.</p>
-                </div>
-                <div id="desktopNotificationsToggle" class="w-10 h-5 bg-white/10 rounded-full relative cursor-pointer" onclick="toggleDesktopNotifications()">
-                  <div id="desktopNotificationsToggleDot" class="absolute left-1 top-1 w-3 h-3 bg-gray-500 rounded-full transition-all"></div>
+                  <h3>Active Notification Features</h3>
+                  <p>Controls for alerts currently supported in CodeTask Pro</p>
                 </div>
               </div>
 
-              <div class="flex items-center justify-between p-5 bg-overlay border border-white/5 rounded-2xl">
-                <div>
-                  <h3 class="text-[14px] font-bold text-gray-200">Sound Effects</h3>
-                  <p class="text-[12px] text-gray-600">Play a sound for tasks and new messages.</p>
+              <div class="settings-option">
+                <div class="settings-option-icon text-cyan bg-cyan/10">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/></svg>
                 </div>
-                <div id="soundToggle" class="w-10 h-5 bg-cyan/20 rounded-full relative cursor-pointer" onclick="toggleSound()">
-                  <div id="soundToggleDot" class="absolute right-1 top-1 w-3 h-3 bg-cyan rounded-full transition-all"></div>
+                <div class="settings-option-copy">
+                  <h4>Desktop Notifications</h4>
+                  <p>Show browser alerts for new direct messages when the app is open in another tab.</p>
+                </div>
+                <div id="desktopNotificationsToggle" class="settings-toggle" onclick="toggleDesktopNotifications()" role="switch" aria-label="Toggle desktop notifications">
+                  <div id="desktopNotificationsToggleDot" class="settings-toggle-dot"></div>
                 </div>
               </div>
 
-              <div class="flex items-center justify-between p-5 bg-overlay border border-white/5 rounded-2xl">
-                <div>
-                  <h3 class="text-[14px] font-bold text-gray-200">Email Digest</h3>
-                  <p class="text-[12px] text-gray-600">Weekly summary of your team activity.</p>
+              <div class="settings-option">
+                <div class="settings-option-icon text-purple bg-purple/10">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 </div>
-                <div class="w-10 h-5 bg-white/10 rounded-full relative cursor-pointer">
-                  <div class="absolute left-1 top-1 w-3 h-3 bg-gray-500 rounded-full transition-all"></div>
+                <div class="settings-option-copy">
+                  <h4>Sound Effects</h4>
+                  <p>Play sounds when you complete tasks, receive inbox updates, or get new messages.</p>
                 </div>
+                <div id="soundToggle" class="settings-toggle is-on" onclick="toggleSound()" role="switch" aria-label="Toggle notification sounds">
+                  <div id="soundToggleDot" class="settings-toggle-dot is-on"></div>
+                </div>
+              </div>
+
+              <div class="settings-option">
+                <div class="settings-option-icon text-green-400 bg-green-500/10">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+                </div>
+                <div class="settings-option-copy">
+                  <h4>Unread Indicators</h4>
+                  <p>Inbox and chat badges show unread messages and updates automatically.</p>
+                </div>
+                <span class="settings-option-status">Always on</span>
               </div>
             </div>
           </div>
@@ -137,7 +154,11 @@ class AppSettingsPage extends HTMLElement {
           <!-- Contact Section -->
           <div id="settings-contact" class="settings-section p-10 max-w-2xl mx-auto hidden">
             <h2 class="text-[24px] font-bold text-white mb-2">Contact the Developer</h2>
-            <p class="text-[14px] text-gray-500 mb-8">Have questions or feedback? Connect with me on social media or via email.</p>
+            <p class="text-[14px] text-gray-500 mb-8">Have questions or feedback? Connect with me on social media.</p>
+
+            <div class="contact-status contact-status-warning mb-8">
+              This feature is currently unavailable.
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <!-- Facebook -->
@@ -166,7 +187,8 @@ class AppSettingsPage extends HTMLElement {
             </div>
 
             <div class="bg-overlay border border-white/5 rounded-2xl p-8">
-              <h3 class="text-[16px] font-bold text-white mb-6">Send a Message</h3>
+              <h3 class="text-[16px] font-bold text-white mb-2">Send a Message</h3>
+              <p class="text-[12.5px] text-gray-600 mb-6">Direct contact submissions are not connected yet.</p>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div class="flex flex-col gap-2">
                   <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Full Name</label>
@@ -189,6 +211,7 @@ class AppSettingsPage extends HTMLElement {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 Send Message
               </button>
+              <div id="contactStatus" class="contact-status mt-4" aria-live="polite"></div>
             </div>
           </div>
         </div>

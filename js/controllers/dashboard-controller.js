@@ -175,7 +175,7 @@ export function renderSidebarProjects() {
   if (!list) return;
 
   let projectsHtml = state.projects.map(p => `
-    <li><button class="sidebar-item sidebar-project w-full" data-project="${escapeHtml(p.name)}">
+    <li><button class="sidebar-item sidebar-project ${state.currentProject === p.name ? 'active' : ''} w-full" data-project="${escapeHtml(p.name)}">
       <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${escapeHtml(p.color)}"></span>${escapeHtml(p.name)}
     </button></li>
   `).join("");
@@ -190,7 +190,7 @@ export function renderSidebarProjects() {
   }
 
   list.innerHTML = `
-    <li><button class="sidebar-item sidebar-project active w-full" data-project="all">
+    <li><button class="sidebar-item sidebar-project ${state.currentProject === 'all' ? 'active' : ''} w-full" data-project="all">
       <span class="w-2 h-2 rounded-full bg-cyan flex-shrink-0"></span>All Tasks
     </button></li>
     ${projectsHtml}

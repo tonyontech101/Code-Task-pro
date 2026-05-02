@@ -185,6 +185,7 @@ window.closeLogoutModalOnBackdrop = (event) => {
 };
 // Global cleanup manager for Firebase listeners
 const workspaceCleanup = new CleanupManager();
+const projectScopedCleanup = new CleanupManager();
 
 let presenceTimer = null;
 let hydrationStarted = false;
@@ -282,8 +283,11 @@ async function hydrateAuthenticatedWorkspace() {
 
     // Clean up any existing listeners before starting fresh
     workspaceCleanup.cleanup();
+    projectScopedCleanup.cleanup();
     incomingMessagesHydrated = false;
     latestIncomingMessageTimestamp = 0;
+
+    workspaceCleanup.add(() => projectScopedCleanup.cleanup());
 
     workspaceCleanup.add(subscribeToPendingInvitations((pending) => {
       state.pendingInvitations = pending;
@@ -300,12 +304,13 @@ async function hydrateAuthenticatedWorkspace() {
 
     workspaceCleanup.add(subscribeToWorkspaceProjects((projects) => {
       state.projects = projects;
+      projectScopedCleanup.cleanup();
       
       // Secondary listeners that depend on the project list
       // Note: In a more advanced setup, we might manage these separately,
       // but for now, we just refresh the specific subscriptions.
       
-      workspaceCleanup.add(subscribeToVisibleTasks(state.projects, (tasks) => {
+      projectScopedCleanup.add(subscribeToVisibleTasks(state.projects, (tasks) => {
         state.tasks = tasks;
         renderTasks();
         renderProfileSettings();
@@ -313,7 +318,7 @@ async function hydrateAuthenticatedWorkspace() {
         renderTeamGrid();
       }, console.error));
 
-      workspaceCleanup.add(subscribeToVisibleNotes(state.projects, (notes) => {
+      projectScopedCleanup.add(subscribeToVisibleNotes(state.projects, (notes) => {
         state.notes = notes;
         renderNotes();
       }, console.error));

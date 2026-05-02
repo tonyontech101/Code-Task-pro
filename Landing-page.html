@@ -50,7 +50,7 @@
   </h1>
 
   <p class="hero-sub">
-    CodeTask Pro is the modular, collaborative dashboard built for engineers. Manage tasks with integrated chat, strategic notes, and logic implementation — all wrapped in a premium glassmorphic interface.
+    CodeTask Pro is a Firebase-powered workspace for organizing developer work. Manage projects, tasks, team chat, shared notes, inbox updates, and profile settings from one focused dashboard.
   </p>
 
   <div class="hero-actions">
@@ -64,7 +64,7 @@
     </a>
   </div>
 
-  <p class="hero-note">No credit card · No backend · Open source · <span>Free forever</span></p>
+  <p class="hero-note">Email sign-in · Firebase sync · Team collaboration · <span>No credit card required</span></p>
 </div>
 
 <!-- DASHBOARD PREVIEW -->
@@ -154,33 +154,33 @@
     <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon">📋</div>
-        <div class="feat-title">Modular Dashboard</div>
-        <div class="feat-desc">High-fidelity task management with priorities, labels, and real-time status tracking. Drill into deep detail panels for every task.</div>
+        <div class="feat-title">Task Dashboard</div>
+        <div class="feat-desc">Track tasks by project, priority, label, deadline, completion state, notes, code snippets, and detail-panel activity.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">💬</div>
-        <div class="feat-title">Teammate Messaging</div>
-        <div class="feat-desc">Integrated chat system with unread badges, message previews, and real-time teammate status indicators for seamless coordination.</div>
+        <div class="feat-title">Team Messaging</div>
+        <div class="feat-desc">Chat with teammates using real-time messages, unread indicators, message sounds, and optional desktop notifications.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📓</div>
-        <div class="feat-title">Strategic Notes</div>
-        <div class="feat-desc">Premium glassmorphic notes with category tagging, pinning, and personal/team scoping for documentation that stays in flow.</div>
+        <div class="feat-title">Personal & Team Notes</div>
+        <div class="feat-desc">Create notes with tags, colors, pinning, search, and personal or team sharing for workspace documentation.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">📊</div>
-        <div class="feat-title">Project Analytics</div>
-        <div class="feat-desc">Visual progress tracking across multiple projects. Assign team members and monitor development timelines at a glance.</div>
+        <div class="feat-title">Project Progress</div>
+        <div class="feat-desc">Create projects, assign members, view task counts, monitor progress, and see when every task in a project is complete.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">💻</div>
-        <div class="feat-title">Logic Implementation</div>
-        <div class="feat-desc">Architect your tasks with strategy notes and code snippets. Keep implementation logic right where the execution happens.</div>
+        <div class="feat-title">Inbox & Invitations</div>
+        <div class="feat-desc">Receive project invitations and workspace updates in the inbox, with read states, filters, badges, and notification sounds.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">✨</div>
-        <div class="feat-title">Premium UI/UX</div>
-        <div class="feat-desc">A state-of-the-art glassmorphic interface designed specifically for long developer sessions. Dark mode by default, performance by design.</div>
+        <div class="feat-title">Profile & Settings</div>
+        <div class="feat-desc">Edit your username, view your email, check task and project totals, and control notification preferences from settings.</div>
       </div>
     </div>
   </div>
@@ -191,20 +191,20 @@
   <div class="container">
     <div class="stats-grid reveal">
       <div class="stat-card">
-        <div class="stat-num">100%</div>
-        <div class="stat-label">Free — forever, no catch</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num">0</div>
-        <div class="stat-label">Backend dependencies</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num">∞</div>
-        <div class="stat-label">Tasks & projects</div>
+        <div class="stat-num">3</div>
+        <div class="stat-label">Core work views: tasks, projects, notes</div>
       </div>
       <div class="stat-card">
         <div class="stat-num">1</div>
-        <div class="stat-label">HTML file to get started</div>
+        <div class="stat-label">Firebase-backed workspace</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">Live</div>
+        <div class="stat-label">Chat, inbox, and workspace sync</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">2</div>
+        <div class="stat-label">Notification modes: sound and desktop</div>
       </div>
     </div>
   </div>
@@ -215,21 +215,21 @@
   <div class="container">
     <div class="code-grid">
       <div class="reveal">
-        <div class="section-tag">// Developer-First</div>
-        <h2 class="section-title">Code lives<br>in the task.</h2>
-        <p class="section-sub" style="margin-bottom: 32px;">Paste relevant code directly into any task's detail panel. No switching between tools, no lost context.</p>
+        <div class="section-tag">// Task Detail</div>
+        <h2 class="section-title">Context stays<br>with the task.</h2>
+        <p class="section-sub" style="margin-bottom: 32px;">Each task can carry its description, notes, code snippet, tags, priority, deadline, and activity in one detail panel.</p>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Code syntax highlighting in task panels
+            <span style="color:var(--cyan)">✓</span> Code snippets in task detail panels
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Tags and activity log per task
+            <span style="color:var(--cyan)">✓</span> Tags, notes, and activity per task
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
             <span style="color:var(--cyan)">✓</span> JetBrains Mono throughout the UI
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Built with Tailwind + vanilla JS
+            <span style="color:var(--cyan)">✓</span> Built with Tailwind, vanilla JS, Firebase Auth, and Firestore
           </div>
         </div>
       </div>
@@ -257,8 +257,8 @@
 &nbsp;&nbsp;<span class="fn">renderTaskList</span>()<br>
 &nbsp;&nbsp;<span class="kw">return</span> <span class="prop">task</span><br>
 }<br><br>
-<span class="cmt">// Activity log: auto-tracks who + when</span><br>
-<span class="fn">logActivity</span>(<span class="prop">task</span>.<span class="prop">id</span>, <span class="str">'Created task'</span>)
+<span class="cmt">// Initial task activity shown in the detail panel</span><br>
+<span class="prop">activity</span>: [{ <span class="prop">text</span>: <span class="str">'Just created'</span>, <span class="prop">time</span>: <span class="str">'now'</span> }]
         </div>
       </div>
     </div>
@@ -270,22 +270,22 @@
   <div class="container">
     <div class="section-tag">// How it works</div>
     <h2 class="section-title">From zero to<br>organized in seconds.</h2>
-    <p class="section-sub">No account, no setup, no waiting. Just open and build.</p>
+    <p class="section-sub">Create an account, set up projects, then coordinate tasks, notes, and chat in one workspace.</p>
     <div class="steps-grid reveal">
       <div class="step-card">
         <div class="step-num">01</div>
         <div class="step-title">Organize</div>
-        <div class="step-desc">Structure your workspace into projects and invite your development team. Get a 360° view of your engineering roadmap instantly.</div>
+        <div class="step-desc">Create projects, add tasks, and invite teammates so your workspace reflects the work actually being done.</div>
       </div>
       <div class="step-card">
         <div class="step-num">02</div>
-        <div class="step-title">Architect</div>
-        <div class="step-desc">Break down complex tasks into implementation logic and code snippets. Document every decision in your strategic notes.</div>
+        <div class="step-title">Document</div>
+        <div class="step-desc">Use task details and shared notes to keep decisions, implementation notes, and project context easy to find.</div>
       </div>
       <div class="step-card">
         <div class="step-num">03</div>
         <div class="step-title">Sync & Ship</div>
-        <div class="step-desc">Coordinate in real-time with teammate chat and shared documentation. Hit your deadlines with a focused, glassmorphic dashboard.</div>
+        <div class="step-desc">Coordinate with chat, inbox updates, project invitations, and completion indicators that keep the team aligned.</div>
       </div>
     </div>
   </div>
@@ -296,16 +296,16 @@
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-free-badge">
-        <span>★</span> 100% Free · No Account Needed
+        <span>★</span> Account-based workspace
       </div>
       <h2 class="cta-title">Start shipping<br>code like a pro.</h2>
-      <p class="cta-sub">Join thousands of developers using CodeTask Pro to organize their workflow, architect their logic, and sync with their teams in a premium dark environment.</p>
+      <p class="cta-sub">Use CodeTask Pro to organize projects, track tasks, share notes, message teammates, and keep your workspace progress visible.</p>
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
         <a href="signup-page.html" class="btn-primary-lg">
-          Launch CodeTask Pro →
+          Create an account →
         </a>
-        <a href="#" class="btn-ghost-lg">
-          View on GitHub
+        <a href="login-page.html" class="btn-ghost-lg">
+          Sign in
         </a>
       </div>
     </div>
@@ -318,10 +318,10 @@
     © 2026 <span>CodeTask Pro</span> · Built for developers
   </div>
   <ul class="footer-links">
-    <li><a href="#">GitHub</a></li>
-    <li><a href="#">Docs</a></li>
-    <li><a href="#">Changelog</a></li>
-    <li><a href="#">MIT License</a></li>
+    <li><a href="login-page.html">Sign in</a></li>
+    <li><a href="signup-page.html">Create account</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
   </ul>
 </footer>
 

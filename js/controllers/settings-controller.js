@@ -38,26 +38,20 @@ function renderToggle(toggleId, dotId, enabled) {
   const dot = document.getElementById(dotId);
 
   if (toggle && dot) {
-    toggle.className = `w-10 h-5 rounded-full relative cursor-pointer transition-colors ${enabled ? 'bg-cyan/20' : 'bg-white/10'}`;
-    dot.className = `absolute top-1 w-3 h-3 rounded-full transition-all ${enabled ? 'right-1 bg-cyan' : 'left-1 bg-gray-500'}`;
+    toggle.className = `settings-toggle${enabled ? ' is-on' : ''}`;
+    dot.className = `settings-toggle-dot${enabled ? ' is-on' : ''}`;
+    toggle.setAttribute("aria-checked", String(enabled));
   }
 }
 
 export function sendContactForm() {
-  const name    = document.getElementById("contactName")?.value.trim();
-  const email   = document.getElementById("contactEmail")?.value.trim();
-  const subject = document.getElementById("contactSubject")?.value.trim();
-  const message = document.getElementById("contactMessage")?.value.trim();
-
-  if (!name || !email || !message) return alert("Please fill in required fields.");
-
-  alert("Thanks for reaching out! This demo form is not connected to a backend, but in a real app this would be sent to the developer.");
-  
-  // Clear form
-  if (document.getElementById("contactName")) document.getElementById("contactName").value = "";
-  if (document.getElementById("contactEmail")) document.getElementById("contactEmail").value = "";
-  if (document.getElementById("contactSubject")) document.getElementById("contactSubject").value = "";
-  if (document.getElementById("contactMessage")) document.getElementById("contactMessage").value = "";
+  const status = document.getElementById("contactStatus");
+  if (status) {
+    status.textContent = "This feature is currently unavailable.";
+    status.className = "contact-status contact-status-warning";
+  } else {
+    alert("This feature is currently unavailable.");
+  }
 }
 
 export function toggleSound() {

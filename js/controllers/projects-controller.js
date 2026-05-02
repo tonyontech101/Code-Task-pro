@@ -73,6 +73,7 @@ export function renderProjectsGrid(highlightName) {
     const taskCount = pTasks.length;
     const isActive  = highlightName === p.name;
     const pctDone   = taskCount ? Math.round((doneCount/taskCount)*100) : 0;
+    const isProjectCompleted = taskCount > 0 && doneCount === taskCount;
     const projMembers = (p.memberIds || []).map(id => state.members.find(m => m.id === id)).filter(Boolean);
     const projectId = inlineJsArg(p.id);
     const projectName = inlineJsArg(p.name);
@@ -87,18 +88,21 @@ export function renderProjectsGrid(highlightName) {
     const extra = projMembers.length > 3 ? `<div class="w-7 h-7 -ml-2 rounded-full bg-overlay border-2 border-elevated flex items-center justify-center text-[9px] font-bold text-gray-500">+${projMembers.length-3}</div>` : '';
 
     return `
-      <div class="project-card group bg-elevated border ${isActive ? 'border-cyan/40 ring-1 ring-cyan/20' : 'border-white/[0.04]'} rounded-xl p-5 transition-all hover:bg-hover hover:translate-y-[-2px] hover:shadow-xl hover:shadow-black/40">
+      <div class="project-card group bg-elevated border ${isActive ? 'border-cyan/40 ring-1 ring-cyan/20' : 'border-white/[0.04]'} rounded-xl p-5 transition-all hover:bg-hover hover:translate-y-[-2px] hover:shadow-xl hover:shadow-black/40 cursor-pointer" onclick="window.openProjectDashboard(${projectName})">
         <div class="flex items-start justify-between gap-4 mb-4">
           <div class="flex items-start gap-3 min-w-0">
             <div class="w-9 h-9 rounded-lg bg-overlay border border-white/[0.06] flex items-center justify-center flex-shrink-0">
               <span class="w-2.5 h-2.5 rounded-full shadow-lg shadow-black/20" style="background: ${p.color}"></span>
             </div>
             <div class="min-w-0 pt-0.5">
-              <h3 class="text-[15px] font-bold text-gray-100 cursor-pointer hover:text-cyan transition-colors truncate" onclick="window.openProjectDashboard(${projectName})">${escapeHtml(p.name)}</h3>
+              <h3 class="text-[15px] font-bold text-gray-100 group-hover:text-cyan transition-colors truncate">${escapeHtml(p.name)}</h3>
               <p class="text-[12px] text-gray-600 truncate">Owner <span class="text-gray-400 font-semibold">${escapeHtml(ownerName)}</span></p>
             </div>
           </div>
-          <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            ${isProjectCompleted ? '<span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-cyan/10 text-cyan border border-cyan/20">Project Completed</span>' : ''}
+            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span>
+          </div>
         </div>
 
         <p class="text-[13px] text-gray-500 leading-relaxed mb-5 line-clamp-2 min-h-[40px]">${escapeHtml(p.desc)}</p>
@@ -131,8 +135,8 @@ export function renderProjectsGrid(highlightName) {
           <span class="text-[11px] text-gray-600 font-medium">Created ${formatDate(p.createdAt || p.id)}</span>
         </div>
         <div class="grid grid-cols-2 gap-3 mt-auto">
-          <button onclick="window.openEditProjectModal(${projectId})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Edit</button>
-          <button onclick="window.deleteProject(${projectId})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Delete</button>
+          <button onclick="event.stopPropagation(); window.openEditProjectModal(${projectId})" class="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Edit</button>
+          <button onclick="event.stopPropagation(); window.deleteProject(${projectId})" class="py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[13px] font-semibold rounded-lg transition-all active:scale-[0.98]">Delete</button>
         </div>
       </div>`;
   }).join('');
@@ -141,6 +145,7 @@ export function renderProjectsGrid(highlightName) {
 export function openProjectDashboard(name) {
   state.currentProject = name;
   navigateToPage("pageDashboard");
+  renderSidebarProjects();
   renderTasks();
   document.querySelectorAll(".sidebar-project").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.project === name);

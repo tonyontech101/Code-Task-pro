@@ -9,9 +9,19 @@ import { escapeHtml, formatDate, showToast } from '../modules/utils.js';
 
 const NOTE_SAVE_DELAY_MS = 500;
 const noteSaveTimers = new Map();
+let isCreatingNote = false;
+
+function uniqueNotes(notes) {
+  const byKey = new Map();
+  notes.forEach(note => {
+    const key = `${note.storage || note.scope || "note"}:${note.teamNoteId || note.id}`;
+    byKey.set(key, note);
+  });
+  return [...byKey.values()];
+}
 
 function findNote(id) {
-  return state.notes.find(note => String(note.id) === String(id));
+  return uniqueNotes(state.notes).find(note => String(note.id) === String(id));
 }
 
 function getNoteTime(note) {
@@ -66,7 +76,7 @@ export function renderNotes() {
   const sidebarList = document.getElementById("notesSidebarList");
   if (!sidebarList) return;
 
-  let filtered = [...state.notes];
+  let filtered = uniqueNotes(state.notes);
   if (state.notesFilter !== "all") filtered = filtered.filter(n => n.scope === state.notesFilter);
   if (state.notesSearchQuery) {
     const q = state.notesSearchQuery.toLowerCase();
@@ -211,6 +221,9 @@ export function removeNoteTag(tag) {
 }
 
 export async function addNote() {
+  if (isCreatingNote) return;
+  isCreatingNote = true;
+
   const payload = {
     title: "",
     content: "",
@@ -222,12 +235,14 @@ export async function addNote() {
   };
   try {
     const newNote = await createNoteRecord(payload);
-    state.notes.unshift(newNote);
+    state.notes = uniqueNotes([newNote, ...state.notes]);
     selectNote(newNote.id);
     showToast("Note created");
   } catch (err) {
     showToast("Failed to create note", "error");
     console.error(err);
+  } finally {
+    isCreatingNote = false;
   }
 }
 
