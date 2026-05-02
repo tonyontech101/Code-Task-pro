@@ -4,7 +4,7 @@
 
 import { state } from '../modules/state.js';
 import { navigateToPage } from '../modules/navigation.js';
-import { showToast, escapeHtml } from '../modules/utils.js';
+import { showToast, escapeHtml, playNotifSound } from '../modules/utils.js';
 import { createTaskRecord, deleteTaskRecord, updateTaskRecord, createInboxItem } from '../modules/data-store.js';
 
 function getTaskKey(task) {
@@ -47,12 +47,13 @@ export function renderTasks() {
       </tr>`;
   } else {
     tbody.innerHTML = filtered.map(t => {
-      const taskKey = JSON.stringify(getTaskKey(t));
+      const rawKey = getTaskKey(t);
+      const safeKey = escapeHtml(rawKey);
       const readOnly = Boolean(t.readOnly);
       return `
-      <tr class="${getTaskKey(t) === state.selectedTaskId ? 'selected' : ''}" onclick='window.selectTask(${taskKey})'>
+      <tr class="${rawKey === state.selectedTaskId ? 'selected' : ''}" onclick="window.selectTask(&quot;${safeKey}&quot;)">
         <td>
-          <div class="task-cb ${t.done ? 'checked' : ''} ${readOnly ? 'opacity-40 cursor-not-allowed' : ''}" ${readOnly ? 'title="Shared task"' : `onclick='event.stopPropagation(); window.toggleTask(${taskKey})'`}></div>
+          <div class="task-cb ${t.done ? 'checked' : ''} ${readOnly ? 'opacity-40 cursor-not-allowed' : ''}" ${readOnly ? 'title="Shared task"' : `onclick="event.stopPropagation(); window.toggleTask(&quot;${safeKey}&quot;)"`}></div>
         </td>
         <td><span class="badge badge-${escapeHtml(t.priority)}">${escapeHtml(t.priority)}</span></td>
         <td class="text-[13.5px] ${t.done ? 'line-through text-gray-600' : 'text-gray-200'} font-medium">
@@ -62,7 +63,7 @@ export function renderTasks() {
         <td class="text-[13px] text-gray-500 font-mono">${escapeHtml(t.deadline)}</td>
         <td><span class="badge badge-${escapeHtml(t.label)}">${escapeHtml(t.label)}</span></td>
         <td>
-          ${readOnly ? '<span class="text-[11px] text-gray-700 font-bold">View</span>' : `<button class="icon-btn" onclick='event.stopPropagation(); window.deleteTask(${taskKey})' title="Delete">
+          ${readOnly ? '<span class="text-[11px] text-gray-700 font-bold">View</span>' : `<button class="icon-btn" onclick="event.stopPropagation(); window.deleteTask(&quot;${safeKey}&quot;)" title="Delete">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>`}
         </td>
@@ -105,6 +106,9 @@ export async function toggleTask(id) {
   if (t) { 
     const nextDone = !t.done;
     t.done = nextDone;
+    if (nextDone && state.soundEnabled) {
+      playNotifSound();
+    }
     renderTasks();
     try {
       await updateTaskRecord(t.id, { done: nextDone });

@@ -7,7 +7,7 @@ import { auth, onAuthStateChanged } from "../config/config.js";
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     // ❌ Not logged in → redirect to login page
-    window.location.href = "login-page.html";
+    window.location.href = "index.html";
     return;
   }
 

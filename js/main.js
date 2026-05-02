@@ -3,6 +3,7 @@
  */
 
 import { CleanupManager, debounce } from './modules/performance.js';
+import { playNotifSound, playMessageSound } from './modules/utils.js';
 import { state } from './modules/state.js';
 import { navigateToPage, PAGE_IDS } from './modules/navigation.js';
 import { 
@@ -34,10 +35,11 @@ import {
   prepareInviteMemberModal
 } from './controllers/team-controller.js';
 import { 
-  renderInbox, 
+  renderInbox,
   openChat, 
   renderChatMessages, 
   renderSidebarChatList,
+  updateInboxBadges,
   filterSidebarChats,
   toggleInboxRead,
   dismissInboxItem,
@@ -64,7 +66,10 @@ import {
 } from './controllers/notes-controller.js';
 import {
   setSettingsTab,
-  sendContactForm
+  sendContactForm,
+  toggleSound,
+  toggleDesktopNotifications,
+  renderNotificationSettings
 } from './controllers/settings-controller.js';
 import {
   ensureUserProfile,
@@ -76,6 +81,7 @@ import {
   subscribeToWorkspaceProjects,
   subscribeToVisibleTasks,
   subscribeToInboxItems,
+  subscribeToIncomingMessages,
   createInboxItem
 } from './modules/data-store.js';
 
@@ -112,6 +118,7 @@ window.deleteMember = deleteMember;
 window.prepareInviteMemberModal = prepareInviteMemberModal;
 window.openChat = openChat;
 window.renderInbox = renderInbox;
+window.updateInboxBadges = updateInboxBadges;
 window.selectNote = selectNote;
 window.addNote = addNote;
 window.filterNotes = filterNotes;
@@ -128,6 +135,9 @@ window.toggleInboxRead = toggleInboxRead;
 window.dismissInboxItem = dismissInboxItem;
 window.setSettingsTab = setSettingsTab;
 window.sendContactForm = sendContactForm;
+window.toggleSound = toggleSound;
+window.toggleDesktopNotifications = toggleDesktopNotifications;
+window.renderNotificationSettings = renderNotificationSettings;
 window.filterInbox = filterInbox;
 window.markAllInboxRead = markAllInboxRead;
 window.clearAllInbox = clearAllInbox;
@@ -174,6 +184,61 @@ const workspaceCleanup = new CleanupManager();
 
 let presenceTimer = null;
 let hydrationStarted = false;
+let incomingMessagesHydrated = false;
+let latestIncomingMessageTimestamp = 0;
+
+function getMessageSenderName(senderUid) {
+  const sender = state.members.find(member => member.uid === senderUid);
+  return sender?.name || sender?.displayName || sender?.email?.split("@")[0] || "New message";
+}
+
+function showMessageNotification(message) {
+  if (!state.desktopNotificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+
+  const shouldNotify = document.hidden
+    || state.activePageId !== "pageInbox"
+    || state.activeChatContactId !== message.senderUid;
+  if (!shouldNotify) return;
+
+  try {
+    const notification = new Notification(getMessageSenderName(message.senderUid), {
+      body: String(message.text || "Sent you a message"),
+      tag: `message-${message.senderUid}`,
+      silent: true
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      navigateToPage("pageInbox");
+      openChat(message.senderUid);
+      notification.close();
+    };
+  } catch (err) {
+    console.warn("Desktop notification failed:", err);
+  }
+}
+
+function handleIncomingMessages(messages) {
+  state.incomingMessages = messages;
+
+  const newestTimestamp = messages.reduce((latest, message) => {
+    return Math.max(latest, Number(message.timestamp) || 0);
+  }, latestIncomingMessageTimestamp);
+
+  const freshMessages = incomingMessagesHydrated
+    ? messages.filter(message => (Number(message.timestamp) || 0) > latestIncomingMessageTimestamp)
+    : [];
+
+  freshMessages.forEach(message => {
+    if (state.soundEnabled) playMessageSound();
+    showMessageNotification(message);
+  });
+
+  latestIncomingMessageTimestamp = newestTimestamp;
+  incomingMessagesHydrated = true;
+  renderSidebarChatList();
+  updateInboxBadges();
+}
 
 function renderWorkspace() {
   renderSidebarProjects();
@@ -212,6 +277,8 @@ async function hydrateAuthenticatedWorkspace() {
 
     // Clean up any existing listeners before starting fresh
     workspaceCleanup.cleanup();
+    incomingMessagesHydrated = false;
+    latestIncomingMessageTimestamp = 0;
 
     workspaceCleanup.add(subscribeToPendingInvitations((pending) => {
       state.pendingInvitations = pending;
@@ -253,9 +320,17 @@ async function hydrateAuthenticatedWorkspace() {
     }, console.error));
 
     workspaceCleanup.add(subscribeToInboxItems((items) => {
+      const prevCount = state.inboxItems.length;
       state.inboxItems = items;
       renderInbox();
+
+      // Play sound if new items arrived
+      if (state.soundEnabled && items.length > prevCount) {
+        playNotifSound();
+      }
     }, console.error));
+
+    workspaceCleanup.add(subscribeToIncomingMessages(handleIncomingMessages, console.error));
   } catch (err) {
     hydrationStarted = false;
     console.error("Failed to load workspace data:", err);
@@ -270,8 +345,12 @@ function init() {
   console.log("Initializing CodeTask Pro...");
   
   // Initial Renders
+  if ("Notification" in window && Notification.permission === "granted") {
+    state.desktopNotificationsEnabled = true;
+  }
   renderSidebarProjects();
   renderTasks();
+  renderNotificationSettings();
   
   // Setup Rail Buttons
   const railBtns = document.querySelectorAll(".rail-btn");

@@ -76,3 +76,17 @@ export const showToast = (message, type = 'success') => {
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 };
+
+const playSound = (src, volume = 0.5) => {
+  const audio = new Audio(src);
+  audio.volume = volume;
+  audio.play().catch(err => console.warn("Audio playback failed:", err));
+};
+
+export const playNotifSound = () => {
+  playSound('/assets/notif.mp3');
+};
+
+export const playMessageSound = () => {
+  playSound('/assets/message.mp3');
+};

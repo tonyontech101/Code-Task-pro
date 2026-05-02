@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         successView.classList.add("show");
 
         setTimeout(() => {
-          window.location.href = "index.html";
+          window.location.href = "app.html";
         }, 800);
       } catch (error) {
         console.error(error);

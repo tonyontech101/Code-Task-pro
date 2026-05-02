@@ -108,7 +108,7 @@ window.signInWithGoogle = async () => {
   try {
     const credential = await signInWithPopup(auth, provider);
     await writeUserProfile(credential.user, { onlineStatus: "online" });
-    window.location.href = "index.html";
+    window.location.href = "app.html";
   } catch (err) {
     console.error("Google sign-in error:", err);
     alert(err.message);
@@ -119,7 +119,7 @@ window.signInWithGoogle = async () => {
 window.logout = async () => {
   try {
     await signOut(auth);
-    window.location.href = "login-page.html";
+    window.location.href = "index.html";
   } catch (err) {
     console.error("Logout error:", err);
   }

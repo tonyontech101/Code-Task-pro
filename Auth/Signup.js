@@ -117,6 +117,16 @@ function showErr(inputId, errId, show) {
   err.style.display = show ? "block" : "none";
 }
 
+function setFieldError(inputId, errId, message) {
+  const inp = $(inputId);
+  const err = $(errId);
+  if (!inp || !err) return;
+
+  err.textContent = message;
+  inp.classList.add("error");
+  err.style.display = "block";
+}
+
 syncRateLimitUi();
 
 $("signupBtn")?.addEventListener("click", async () => {
@@ -127,6 +137,7 @@ $("signupBtn")?.addEventListener("click", async () => {
   const terms = $("terms").checked;
 
   let valid = true;
+  $("emailErr").textContent = "Please enter a valid email address.";
 
   if (!name) {
     showErr("fullName", "nameErr", true);
@@ -211,10 +222,12 @@ $("signupBtn")?.addEventListener("click", async () => {
     console.error(error);
 
     let message = "Signup failed";
+    let duplicateEmail = false;
 
     switch (error.code) {
       case "auth/email-already-in-use":
-        message = "Email already exists";
+        duplicateEmail = true;
+        message = "This account is already registered. Please log in instead.";
         break;
       case "auth/weak-password":
         message = "Password must be at least 6 characters";
@@ -251,6 +264,10 @@ $("signupBtn")?.addEventListener("click", async () => {
 
     signupBtn.classList.remove("loading");
     syncRateLimitUi();
+    if (duplicateEmail) {
+      setFieldError("email", "emailErr", "This email already has an account.");
+      showStatus(message, "error");
+    }
   }
 });
 
@@ -266,6 +283,9 @@ $("signupBtn")?.addEventListener("click", async () => {
     };
 
     $(map[id]).style.display = "none";
+    if (id === "email") {
+      $("emailErr").textContent = "Please enter a valid email address.";
+    }
     syncRateLimitUi();
   });
 });

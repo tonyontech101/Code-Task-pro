@@ -918,6 +918,39 @@ export function subscribeToChatMessages(otherUid, onUpdate, onError) {
 }
 
 // ── Inbox / Notifications ─────────────────────────────────────
+export function subscribeToIncomingMessages(onUpdate, onError) {
+  const myUid = requireUserId();
+  const q = query(
+    collection(db, COLLECTIONS.messages),
+    where("receiverUid", "==", myUid)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const messages = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    onUpdate(messages);
+  }, onError);
+}
+
+export async function markChatMessagesReadRecord(senderUid) {
+  const myUid = requireUserId();
+  const q = query(
+    collection(db, COLLECTIONS.messages),
+    where("receiverUid", "==", myUid),
+    where("senderUid", "==", senderUid),
+    where("read", "==", false)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return;
+
+  const batch = writeBatch(db);
+  snapshot.docs.forEach(message => {
+    batch.update(message.ref, { read: true });
+  });
+  await batch.commit();
+}
+
 export function subscribeToInboxItems(onChange, onError) {
   return onSnapshot(userCollection(COLLECTIONS.inbox), (snapshot) => {
     onChange(sortByNewest(snapshot.docs.map(hydrateDoc)));

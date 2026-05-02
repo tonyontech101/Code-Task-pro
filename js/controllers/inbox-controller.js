@@ -10,6 +10,7 @@ import {
   loadWorkspaceData,
   sendChatMessageRecord,
   subscribeToChatMessages,
+  markChatMessagesReadRecord,
   updateInboxItemRecord,
   deleteInboxItemRecord,
   markAllInboxReadRecord,
@@ -61,6 +62,25 @@ function getVisibleInboxItems() {
   return [...invitations, ...state.inboxItems];
 }
 
+function getUnreadMessageCount(senderUid = null) {
+  return state.incomingMessages.filter(message => {
+    return !message.read && (!senderUid || message.senderUid === senderUid);
+  }).length;
+}
+
+export function updateInboxBadges() {
+  const unreadCount = getUnreadMessageCount();
+  const displayCount = unreadCount > 99 ? "99+" : String(unreadCount);
+  const badge = document.getElementById("inboxBadge");
+  const railBadge = document.getElementById("railInboxBadge");
+
+  [badge, railBadge].forEach(el => {
+    if (!el) return;
+    el.textContent = displayCount;
+    el.classList.toggle("hidden", unreadCount === 0);
+  });
+}
+
 export function renderInbox() {
   const list  = document.getElementById("inboxList");
   const count = document.getElementById("inboxCount");
@@ -75,10 +95,7 @@ export function renderInbox() {
 
   if (count) count.textContent = `(${filtered.length})`;
 
-  // Update sidebar badge
-  const unreadCount = items.filter(n => !n.read).length;
-  const badge = document.getElementById("inboxBadge");
-  if (badge) badge.textContent = unreadCount;
+  updateInboxBadges();
 
   if (filtered.length === 0) {
     list.innerHTML = `
@@ -167,6 +184,7 @@ export function openChat(contactId) {
 
   // 2. Set active contact and clear stale container
   state.activeChatContactId = contactId;
+  markChatMessagesReadRecord(contactId).catch(console.error);
   const container = document.getElementById('chatMessages');
   if (container) {
     container.innerHTML = `
@@ -215,15 +233,22 @@ export function openChat(contactId) {
     // Only update if we are still looking at this contact
     if (state.activeChatContactId !== contactId) return;
 
+    const currentUid = auth.currentUser?.uid;
+
     state.chatConversations[contactId] = messages.map(msg => ({
-      from: msg.senderUid === auth.currentUser.uid ? 'me' : 'them',
+      from: msg.senderUid === currentUid ? 'me' : 'them',
       text: msg.text,
       time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' : new Date(msg.timestamp).toLocaleDateString()
     }));
+
+    if (messages.some(msg => msg.senderUid === contactId && !msg.read)) {
+      markChatMessagesReadRecord(contactId).catch(console.error);
+    }
     
     renderChatMessages();
     renderSidebarChatList();
+    updateInboxBadges();
   }, (err) => {
     console.error("Message subscription error:", err);
   });
@@ -348,7 +373,7 @@ export function renderSidebarChatList(query = "") {
       role: m.role || "Member",
       email: m.email,
       photoURL: m.photoURL,
-      unreadCount: 0 
+      unreadCount: getUnreadMessageCount(m.uid)
     }));
 
   const filtered = query 

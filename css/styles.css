@@ -738,6 +738,22 @@ select.modal-input option { background: #21252e; }
   align-items: center;
   justify-content: center;
 }
+.inbox-rail-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #00d4c8;
+  color: #0d0e11;
+  border: 1px solid var(--bg-surface);
+  font-size: 9px;
+  line-height: 13px;
+  font-weight: 800;
+  text-align: center;
+}
 .sidebar-chat-preview {
   display: block;
   font-size: 11px;

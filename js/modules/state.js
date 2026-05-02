@@ -22,6 +22,7 @@ export const state = {
   activeChatContactId: null,
   chatContacts: [],
   chatConversations: {},
+  incomingMessages: [],
   
   // Inbox State
   inboxItems: [],
@@ -32,4 +33,6 @@ export const state = {
   notesFilter: "all",
   notesSearchQuery: "",
   tasksSearchQuery: "",
+  soundEnabled: true,
+  desktopNotificationsEnabled: false,
 };
