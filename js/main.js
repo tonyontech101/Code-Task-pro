@@ -69,7 +69,9 @@ import {
   sendContactForm,
   toggleSound,
   toggleDesktopNotifications,
-  renderNotificationSettings
+  renderNotificationSettings,
+  renderProfileSettings,
+  saveProfileSettings
 } from './controllers/settings-controller.js';
 import {
   ensureUserProfile,
@@ -138,6 +140,8 @@ window.sendContactForm = sendContactForm;
 window.toggleSound = toggleSound;
 window.toggleDesktopNotifications = toggleDesktopNotifications;
 window.renderNotificationSettings = renderNotificationSettings;
+window.renderProfileSettings = renderProfileSettings;
+window.saveProfileSettings = saveProfileSettings;
 window.filterInbox = filterInbox;
 window.markAllInboxRead = markAllInboxRead;
 window.clearAllInbox = clearAllInbox;
@@ -248,6 +252,7 @@ function renderWorkspace() {
   renderInbox();
   renderSidebarChatList();
   renderNotes();
+  renderProfileSettings();
 }
 
 function setupPresence() {
@@ -303,6 +308,7 @@ async function hydrateAuthenticatedWorkspace() {
       workspaceCleanup.add(subscribeToVisibleTasks(state.projects, (tasks) => {
         state.tasks = tasks;
         renderTasks();
+        renderProfileSettings();
         renderProjectsGrid();
         renderTeamGrid();
       }, console.error));
@@ -350,6 +356,7 @@ function init() {
   }
   renderSidebarProjects();
   renderTasks();
+  renderProfileSettings();
   renderNotificationSettings();
   
   // Setup Rail Buttons

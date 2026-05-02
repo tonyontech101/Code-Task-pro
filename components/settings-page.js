@@ -7,7 +7,11 @@ class AppSettingsPage extends HTMLElement {
           <div class="p-6">
             <h1 class="text-[18px] font-bold tracking-tight text-white mb-6">Settings</h1>
             <nav class="flex flex-col gap-1">
-              <button class="settings-nav-btn active" data-tab="notifications" onclick="setSettingsTab('notifications')">
+              <button class="settings-nav-btn active" data-tab="profile" onclick="setSettingsTab('profile')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                Profile
+              </button>
+              <button class="settings-nav-btn" data-tab="notifications" onclick="setSettingsTab('notifications')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                 Notifications
               </button>
@@ -23,8 +27,58 @@ class AppSettingsPage extends HTMLElement {
         <div class="flex-1 overflow-y-auto custom-scrollbar" id="settingsContentArea">
 
 
+          <!-- Profile Section -->
+          <div id="settings-profile" class="settings-section p-10 max-w-2xl mx-auto">
+            <h2 class="text-[24px] font-bold text-white mb-2">Profile</h2>
+            <p class="text-[14px] text-gray-500 mb-8">Update your username and review your workspace progress.</p>
+
+            <div class="bg-overlay border border-white/5 rounded-2xl p-6 mb-6">
+              <div class="flex items-center gap-4 mb-6">
+                <div id="profileAvatar" class="w-14 h-14 rounded-2xl bg-cyan/10 text-cyan flex items-center justify-center text-[20px] font-bold">U</div>
+                <div class="min-w-0">
+                  <h3 id="profileDisplayName" class="text-[17px] font-bold text-white truncate">User</h3>
+                  <p id="profileDisplayEmail" class="text-[12.5px] text-gray-500 truncate">email@example.com</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div class="flex flex-col gap-2">
+                  <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Username</label>
+                  <input type="text" id="profileUsername" placeholder="Your username" class="settings-input">
+                </div>
+                <div class="flex flex-col gap-2">
+                  <label class="text-[11px] font-bold uppercase tracking-widest text-gray-600 ml-1">Email Address</label>
+                  <input type="email" id="profileEmail" class="settings-input" readonly>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between gap-4 flex-wrap">
+                <p id="profileStatus" class="text-[12.5px] text-gray-500 min-h-[20px]"></p>
+                <button onclick="saveProfileSettings()" class="px-6 py-2.5 bg-cyan text-base font-bold rounded-xl hover:opacity-90 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save Profile
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="settings-stat">
+                <span class="settings-stat-label">Tasks Completed</span>
+                <strong id="profileTasksCompleted">0</strong>
+              </div>
+              <div class="settings-stat">
+                <span class="settings-stat-label">Tasks To Do</span>
+                <strong id="profileTasksTodo">0</strong>
+              </div>
+              <div class="settings-stat">
+                <span class="settings-stat-label">Projects</span>
+                <strong id="profileProjectsCount">0</strong>
+              </div>
+            </div>
+          </div>
+
           <!-- Notifications Section -->
-          <div id="settings-notifications" class="settings-section p-10 max-w-2xl mx-auto">
+          <div id="settings-notifications" class="settings-section p-10 max-w-2xl mx-auto hidden">
             <h2 class="text-[24px] font-bold text-white mb-2">Notifications</h2>
             <p class="text-[14px] text-gray-500 mb-8">Control when and how you get notified.</p>
 

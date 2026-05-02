@@ -3,6 +3,19 @@
  */
 
 import { state } from '../modules/state.js';
+import { auth } from '../../config/config.js';
+
+function getProfileName() {
+  return auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "User";
+}
+
+function showProfileStatus(message = "", tone = "") {
+  const status = document.getElementById("profileStatus");
+  if (!status) return;
+
+  status.textContent = message;
+  status.className = `text-[12.5px] min-h-[20px] ${tone === "success" ? "text-cyan" : tone === "error" ? "text-red-400" : "text-gray-500"}`;
+}
 
 export function setSettingsTab(tabId) {
   // Update sidebar buttons
@@ -16,6 +29,8 @@ export function setSettingsTab(tabId) {
     const isTarget = sec.id === `settings-${tabId}`;
     sec.classList.toggle('hidden', !isTarget);
   });
+
+  if (tabId === "profile") renderProfileSettings();
 }
 
 function renderToggle(toggleId, dotId, enabled) {
@@ -48,6 +63,72 @@ export function sendContactForm() {
 export function toggleSound() {
   state.soundEnabled = !state.soundEnabled;
   renderToggle('soundToggle', 'soundToggleDot', state.soundEnabled);
+}
+
+export function renderProfileSettings() {
+  const user = auth.currentUser;
+  const name = getProfileName();
+  const email = user?.email || "";
+  const completed = state.tasks.filter(task => task.done).length;
+  const todo = state.tasks.filter(task => !task.done).length;
+  const projects = state.projects.length;
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join("")
+    .toUpperCase() || "U";
+
+  const usernameInput = document.getElementById("profileUsername");
+  const emailInput = document.getElementById("profileEmail");
+  const displayName = document.getElementById("profileDisplayName");
+  const displayEmail = document.getElementById("profileDisplayEmail");
+  const avatar = document.getElementById("profileAvatar");
+  const completedEl = document.getElementById("profileTasksCompleted");
+  const todoEl = document.getElementById("profileTasksTodo");
+  const projectsEl = document.getElementById("profileProjectsCount");
+
+  if (usernameInput) usernameInput.value = name;
+  if (emailInput) emailInput.value = email;
+  if (displayName) displayName.textContent = name;
+  if (displayEmail) displayEmail.textContent = email || "No email available";
+  if (avatar) avatar.textContent = initials;
+  if (completedEl) completedEl.textContent = completed;
+  if (todoEl) todoEl.textContent = todo;
+  if (projectsEl) projectsEl.textContent = projects;
+}
+
+export async function saveProfileSettings() {
+  const user = auth.currentUser;
+  const input = document.getElementById("profileUsername");
+  const name = input?.value.trim();
+
+  if (!user || !input) return;
+  if (!name) {
+    input.focus();
+    showProfileStatus("Username cannot be empty.", "error");
+    return;
+  }
+
+  try {
+    showProfileStatus("Saving...");
+    if (window.updateProfile) {
+      await window.updateProfile(user, { displayName: name });
+    }
+    if (window.writeUserProfile) {
+      await window.writeUserProfile(user, {
+        displayName: name,
+        email: user.email || ""
+      });
+    }
+    renderProfileSettings();
+    showProfileStatus("Profile updated.", "success");
+    window.dispatchEvent(new CustomEvent("auth-ready", { detail: { user } }));
+  } catch (err) {
+    console.error(err);
+    showProfileStatus("Failed to update profile.", "error");
+  }
 }
 
 export async function toggleDesktopNotifications() {
