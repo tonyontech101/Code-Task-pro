@@ -14,6 +14,8 @@ import {
   renderSidebarProjects,
   openNewTaskModal,
   addNewTask,
+  editTask,
+  saveEditTask,
   showDetailPanel,
   closeDetailPanel,
   copyDetailCode
@@ -105,6 +107,8 @@ window.selectTask = selectTask;
 window.renderTasks = renderTasks;
 window.openNewTaskModal = openNewTaskModal;
 window.addNewTask = addNewTask;
+window.editTask = editTask;
+window.saveEditTask = saveEditTask;
 window.showDetailPanel = showDetailPanel;
 window.closeDetailPanel = closeDetailPanel;
 window.copyDetailCode = copyDetailCode;

@@ -20,6 +20,8 @@ import {
 } from "../../config/config.js";
 import { state } from "./state.js";
 
+export { arrayUnion, arrayRemove };
+
 const COLLECTIONS = {
   tasks: "tasks",
   projects: "projects",

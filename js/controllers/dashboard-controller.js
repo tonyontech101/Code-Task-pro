@@ -4,8 +4,8 @@
 
 import { state } from '../modules/state.js';
 import { navigateToPage } from '../modules/navigation.js';
-import { showToast, escapeHtml, playNotifSound } from '../modules/utils.js';
-import { createTaskRecord, deleteTaskRecord, updateTaskRecord, createInboxItem } from '../modules/data-store.js';
+import { showToast, escapeHtml, playNotifSound, timeAgo } from '../modules/utils.js';
+import { createTaskRecord, deleteTaskRecord, updateTaskRecord, createInboxItem, arrayUnion } from '../modules/data-store.js';
 
 function getTaskKey(task) {
   return `${task.ownerUid || "local"}:${task.id}`;
@@ -111,7 +111,11 @@ export async function toggleTask(id) {
     }
     renderTasks();
     try {
-      await updateTaskRecord(t.id, { done: nextDone });
+      const timestamp = Date.now();
+      await updateTaskRecord(t.id, { 
+        done: nextDone,
+        activity: arrayUnion({ text: nextDone ? "Marked as complete" : "Marked as active", time: timestamp })
+      });
     } catch (err) {
       t.done = !nextDone;
       renderTasks();
@@ -144,8 +148,7 @@ export async function deleteTask(id) {
                 icon: "task",
                 title: "Task removed",
                 body: `Task "${task.title}" was deleted from project "${task.project}"`,
-                project: task.project,
-                time: "Just now"
+                project: task.project
               }).catch(console.error);
             }
           });
@@ -272,13 +275,95 @@ export async function addNewTask() {
       notes: notes || "",
       code: code || "",
       tags: [label],
-      activity: [{ text: "Just created", time: "now" }]
+      activity: [{ text: "Just created", time: Date.now() }]
     });
 
     window.closeNewTaskModal();
     showToast(`Task created successfully`);
   } catch (err) {
     showToast("Failed to create task", "error");
+    console.error(err);
+  }
+}
+
+export function editTask() {
+  const task = findTaskByKey(state.selectedTaskId);
+  if (!task) return;
+
+  if (task.readOnly) {
+    showToast("Shared project tasks are view-only", "warning");
+    return;
+  }
+
+  document.getElementById("taskModalTitle").textContent = "Edit Task";
+  const submitBtn = document.getElementById("taskModalSubmit");
+  if (submitBtn) {
+    submitBtn.textContent = "Save Changes";
+    submitBtn.onclick = window.saveEditTask;
+  }
+
+  // Populate fields
+  document.getElementById("newTaskTitle").value    = task.title || "";
+  document.getElementById("newTaskMeta").value     = task.desc || "";
+  document.getElementById("newTaskPriority").value = task.priority || "low";
+  document.getElementById("newTaskLabel").value    = task.label || "wip";
+  document.getElementById("newTaskDeadline").value = (task.deadline === "—") ? "" : (task.deadline || "");
+  document.getElementById("newTaskNotes").value    = task.notes || "";
+  document.getElementById("newTaskCode").value     = task.code || "";
+
+  // Populate project selector
+  const sel = document.getElementById("newTaskProject");
+  if (sel) {
+    sel.innerHTML = state.projects.map(p =>
+      `<option value="${escapeHtml(p.name)}" ${p.name === task.project ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
+    ).join("");
+  }
+  document.getElementById("modalBackdrop")?.classList.remove("hidden");
+}
+
+export async function saveEditTask() {
+  try {
+    const task = findTaskByKey(state.selectedTaskId);
+    if (!task) return;
+
+    const title    = document.getElementById("newTaskTitle").value.trim();
+    const meta     = document.getElementById("newTaskMeta").value.trim();
+    const priority = document.getElementById("newTaskPriority").value;
+    const label    = document.getElementById("newTaskLabel").value;
+    const deadline = document.getElementById("newTaskDeadline").value.trim();
+    const notes    = document.getElementById("newTaskNotes").value.trim();
+    const code     = document.getElementById("newTaskCode").value.trim();
+    const project  = document.getElementById("newTaskProject")?.value;
+
+    if (!title) {
+      showToast("Please enter a task title", "error");
+      return;
+    }
+
+    const updates = {
+      title,
+      priority,
+      label,
+      deadline: deadline || "—",
+      project,
+      projectId: state.projects.find(p => p.name === project)?.id || null,
+      desc: meta || "",
+      notes: notes || "",
+      code: code || "",
+      tags: [label],
+      updatedAt: Date.now(),
+      activity: arrayUnion({ text: "Edited task details", time: Date.now() })
+    };
+
+    await updateTaskRecord(task.id, updates);
+    
+    // UI will be updated via onSnapshot in main.js, 
+    // but we refresh the details panel manually
+    window.closeNewTaskModal();
+    showDetailPanel(getTaskKey(task));
+    showToast(`Task updated successfully`);
+  } catch (err) {
+    showToast("Failed to update task", "error");
     console.error(err);
   }
 }
@@ -331,10 +416,21 @@ function renderActivityTimeline(task) {
       <div class="w-[15px] h-[15px] rounded-full bg-surface border-2 border-white/[0.1] z-10 flex-shrink-0 mt-0.5"></div>
       <div class="flex flex-col">
         <span class="text-[12.5px] text-gray-300 font-medium">${act.text}</span>
-        <span class="text-[10px] text-gray-600 uppercase font-bold tracking-tight">${act.time}</span>
+        <span class="text-[10px] text-gray-600 uppercase font-bold tracking-tight">${timeAgo(act.time)}</span>
       </div>
     </div>
   `).join("");
+
+  // Real-time refresh for timeline
+  if (!window._detailRefreshInterval) {
+    window._detailRefreshInterval = setInterval(() => {
+      const p = document.getElementById("detailPanel");
+      if (p && !p.classList.contains("hidden") && state.selectedTaskId) {
+        const currentTask = findTaskByKey(state.selectedTaskId);
+        if (currentTask) renderActivityTimeline(currentTask);
+      }
+    }, 60000);
+  }
 }
 
 export function copyDetailCode(btn) {

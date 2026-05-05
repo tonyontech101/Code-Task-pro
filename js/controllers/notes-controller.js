@@ -5,7 +5,7 @@
 import { state } from '../modules/state.js';
 import { createNoteRecord, deleteNoteRecord, updateNoteRecord, createInboxItem } from '../modules/data-store.js';
 import { auth } from '../../config/config.js';
-import { escapeHtml, formatDate, showToast } from '../modules/utils.js';
+import { escapeHtml, formatDate, showToast, timeAgo } from '../modules/utils.js';
 
 const NOTE_SAVE_DELAY_MS = 500;
 const noteSaveTimers = new Map();
@@ -40,7 +40,7 @@ function getCreatorName(note) {
 }
 
 function getNoteMetaLabel(note) {
-  return `${getNoteDateLabel(note)} · ${getCreatorName(note)}`;
+  return `${timeAgo(note.updatedAt || note.createdAt)} · ${getCreatorName(note)}`;
 }
 
 function inlineJsArg(value) {
@@ -227,7 +227,6 @@ export async function addNote() {
   const payload = {
     title: "",
     content: "",
-    date: "Just now",
     color: "#00d4c8",
     pinned: false,
     scope: "personal",
@@ -238,6 +237,15 @@ export async function addNote() {
     state.notes = uniqueNotes([newNote, ...state.notes]);
     selectNote(newNote.id);
     showToast("Note created");
+
+    // Notification in inbox
+    createInboxItem(auth.currentUser?.uid, {
+      type: "note",
+      icon: "note",
+      title: "New note added",
+      body: `A new note "${newNote.title || 'Untitled'}" has been shared in the workspace.`,
+      project: null
+    }).catch(console.error);
   } catch (err) {
     showToast("Failed to create note", "error");
     console.error(err);
@@ -269,13 +277,10 @@ export function saveNote() {
   
   note.title = titleInput?.value || "";
   note.content = contentInput?.value || "";
-  note.date = "Just now";
-  
   renderNotes();
   persistNote(note.id, {
     title: note.title,
-    content: note.content,
-    date: note.date
+    content: note.content
   });
 }
 
@@ -315,8 +320,7 @@ export async function toggleNoteScope() {
               icon: "project",
               title: "New shared note",
               body: `${auth.currentUser?.displayName || "A teammate"} shared a new note: "${note.title || "Untitled"}"`,
-              project: "Notes",
-              time: "Just now"
+              project: "Notes"
             }).catch(console.error);
           }
         });

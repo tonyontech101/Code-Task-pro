@@ -10,6 +10,29 @@ export const formatDate = (ts) => {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 };
 
+export const timeAgo = (timestamp) => {
+  if (!timestamp) return "Just now";
+  const raw = typeof timestamp === "object" && typeof timestamp.seconds === "number"
+    ? timestamp.seconds * 1000
+    : Number(timestamp);
+    
+  if (isNaN(raw)) return timestamp; // Fallback for existing string timestamps
+  
+  const diffMs = Date.now() - raw;
+  const minutes = Math.max(0, Math.floor(diffMs / 60000));
+  
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  
+  return formatDate(raw);
+};
+
 export const escapeHtml = (value = "") => String(value)
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")

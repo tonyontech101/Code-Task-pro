@@ -296,6 +296,10 @@ select.modal-input option { background: #21252e; }
   background: rgba(245,158,11,0.12);
   color: #f59e0b;
 }
+.inbox-icon-note {
+  background: rgba(0, 212, 200, 0.12);
+  color: #00d4c8;
+}
 
 /* ── Inbox Item Content ───────────────────────────────────────────────────── */
 .inbox-item-content {

@@ -3,7 +3,7 @@
  */
 
 import { state } from '../modules/state.js';
-import { getContactGradient, getStatusColor, showToast, escapeHtml } from '../modules/utils.js';
+import { getContactGradient, getStatusColor, showToast, escapeHtml, timeAgo } from '../modules/utils.js';
 import { 
   acceptInvitationRecord, 
   declineInvitationRecord, 
@@ -23,20 +23,6 @@ import { renderTeamGrid } from './team-controller.js';
 
 let activeMessageSubscription = null;
 
-function timeAgo(timestamp) {
-  if (!timestamp) return "Just now";
-  const raw = typeof timestamp === "object" && typeof timestamp.seconds === "number"
-    ? timestamp.seconds * 1000
-    : Number(timestamp);
-  const diffMs = Date.now() - raw;
-  const minutes = Math.max(0, Math.floor(diffMs / 60000));
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days === 1 ? "" : "s"} ago`;
-}
 
 function invitationToInboxItem(invitation) {
   return {
@@ -130,6 +116,13 @@ export function renderInbox() {
     html += earlier.map(item => renderInboxItem(item)).join('');
   }
   list.innerHTML = html;
+
+  // Real-time refresh
+  if (!window._inboxRefreshInterval) {
+    window._inboxRefreshInterval = setInterval(() => {
+      if (state.activePageId === "pageInbox") renderInbox();
+    }, 60000);
+  }
 }
 
 function renderInboxItem(item) {
@@ -140,11 +133,12 @@ function renderInboxItem(item) {
       project: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
       system:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
       invitation: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="m22 10-10 6L2 10"/><path d="M2 10l10-6 10 6"/></svg>`,
+      note: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
     };
     return icons[type] || icons.system;
   };
   const getInboxIconColor = (type) => {
-    const colors = { task: "inbox-icon-task", mention: "inbox-icon-mention", project: "inbox-icon-project", system: "inbox-icon-system", invitation: "inbox-icon-invitation" };
+    const colors = { task: "inbox-icon-task", mention: "inbox-icon-mention", project: "inbox-icon-project", system: "inbox-icon-system", invitation: "inbox-icon-invitation", note: "inbox-icon-note" };
     return colors[type] || colors.system;
   };
 
@@ -158,7 +152,7 @@ function renderInboxItem(item) {
       <div class="inbox-item-content">
         <div class="inbox-item-header">
           <span class="inbox-item-title">${escapeHtml(item.title)}</span>
-          <span class="inbox-item-time">${escapeHtml(item.time)}</span>
+          <span class="inbox-item-time">${escapeHtml(timeAgo(item.createdAt || item.time))}</span>
         </div>
         <p class="inbox-item-body">${escapeHtml(item.body)}</p>
         ${item.project ? `<span class="inbox-item-project">${escapeHtml(item.project)}</span>` : ''}
