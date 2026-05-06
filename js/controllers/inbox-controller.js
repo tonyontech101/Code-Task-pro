@@ -30,9 +30,11 @@ function invitationToInboxItem(invitation) {
     invitationId: invitation.id,
     type: "invitation",
     icon: "project",
-    title: "Project invitation",
-    body: `${invitation.senderName} invited you to join ${invitation.projectName}`,
-    project: invitation.projectName,
+    title: invitation.projectId ? "Project invitation" : "Workspace invitation",
+    body: invitation.projectId 
+      ? `${invitation.senderName} invited you to join ${invitation.projectName}`
+      : `${invitation.senderName} invited you to join their workspace`,
+    project: invitation.projectId ? invitation.projectName : "",
     time: timeAgo(invitation.createdAt),
     read: false,
     invitation
@@ -55,16 +57,26 @@ function getUnreadMessageCount(senderUid = null) {
 }
 
 export function updateInboxBadges() {
-  const unreadCount = getUnreadMessageCount();
-  const displayCount = unreadCount > 99 ? "99+" : String(unreadCount);
+  const unreadNotifications = state.inboxItems.filter(n => !n.read).length;
+  const unreadInvitations = state.pendingInvitations.length;
+  const unreadMessages = getUnreadMessageCount();
+  
+  const totalUnread = unreadNotifications + unreadInvitations + unreadMessages;
+  const displayCount = totalUnread > 99 ? "99+" : String(totalUnread);
+  
   const badge = document.getElementById("inboxBadge");
   const railBadge = document.getElementById("railInboxBadge");
 
   [badge, railBadge].forEach(el => {
     if (!el) return;
     el.textContent = displayCount;
-    el.classList.toggle("hidden", unreadCount === 0);
+    el.classList.toggle("hidden", totalUnread === 0);
   });
+
+  const unreadDot = document.querySelector(".inbox-tab-dot");
+  if (unreadDot) {
+    unreadDot.classList.toggle("hidden", (unreadNotifications + unreadInvitations) === 0);
+  }
 }
 
 export function renderInbox() {
@@ -102,7 +114,8 @@ export function renderInbox() {
   const today = [];
   const earlier = [];
   filtered.forEach(item => {
-    if (item.time.includes('min') || item.time.includes('hour') || item.time === 'Just now') today.push(item);
+    const timeStr = timeAgo(item.createdAt || item.time);
+    if (timeStr.includes('min') || timeStr.includes('hour') || timeStr === 'Just now') today.push(item);
     else earlier.push(item);
   });
 
@@ -144,7 +157,7 @@ function renderInboxItem(item) {
 
   const itemId = inlineJsArg(item.id);
   const invitationId = inlineJsArg(item.invitationId);
-  const isInvitation = item.type === "invitation";
+  const isInvitation = item.type === "invitation" && item.invitationId;
 
   return `
     <div class="inbox-item ${item.read ? '' : 'inbox-item-unread'}" onclick="${isInvitation ? '' : `window.toggleInboxRead(${itemId})`}">
@@ -263,7 +276,7 @@ export function renderChatMessages() {
       return;
     }
 
-    const name = contact.name || contact.displayName || contact.email?.split('@')[0] || "Team Member";
+    const name = contact.name || contact.displayName || contact.email?.split('@')[0] || "Friend";
     const initials = (name[0] || "U").toUpperCase();
     const avatarHtml = contact.photoURL 
       ? `<img src="${escapeHtml(contact.photoURL)}" class="w-16 h-16 rounded-full object-cover" />`
@@ -283,7 +296,7 @@ export function renderChatMessages() {
               </div>
             </div>
             <h3 class="text-[26px] font-bold text-white tracking-tight mb-1">${escapeHtml(name)}</h3>
-            <p class="text-[14px] text-gray-500 font-medium">${escapeHtml(contact.role || "Team Member")} \u2022 ${escapeHtml(contact.email || "")}</p>
+            <p class="text-[14px] text-gray-500 font-medium">${escapeHtml(contact.role || "Friend")} \u2022 ${escapeHtml(contact.email || "")}</p>
           </div>
 
           <div class="flex gap-6 mb-12">
@@ -361,7 +374,7 @@ export function renderSidebarChatList(query = "") {
     .filter(m => m.uid && m.uid !== currentUid)
     .map(m => ({
       uid: m.uid,
-      name: m.name || m.displayName || m.email?.split('@')[0] || "Team Member",
+      name: m.name || m.displayName || m.email?.split('@')[0] || "Friend",
       avatar: (m.name || m.displayName || m.email || "U")[0].toUpperCase(),
       status: m.status || "offline",
       role: m.role || "Member",
@@ -375,7 +388,7 @@ export function renderSidebarChatList(query = "") {
     : contacts;
 
   if (filtered.length === 0) {
-    list.innerHTML = `<div class="p-4 text-center text-xs text-gray-500">No teammates found</div>`;
+    list.innerHTML = `<div class="p-4 text-center text-xs text-gray-500">No friends found</div>`;
     return;
   }
 
@@ -487,10 +500,11 @@ export async function acceptInvitation(invitationId) {
       await createInboxItem(invitation.senderUid, {
         type: "project",
         icon: "project",
-        title: "Invitation accepted",
-        body: `${auth.currentUser?.displayName || "A user"} accepted your invitation to join "${invitation.projectName}"`,
-        project: invitation.projectName,
-        time: "Just now"
+        title: invitation.projectId ? "Invitation accepted" : "Workspace joined",
+        body: invitation.projectId
+          ? `${auth.currentUser?.displayName || "A user"} accepted your invitation to join "${invitation.projectName}"`
+          : `${auth.currentUser?.displayName || "A user"} accepted your invitation to join the workspace`,
+        project: invitation.projectId ? invitation.projectName : ""
       });
     }
 

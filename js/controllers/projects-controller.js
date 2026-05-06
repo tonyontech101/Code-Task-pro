@@ -14,7 +14,7 @@ function isOwnProject(project) {
 }
 
 function memberLabel(member) {
-  return member.name || member.displayName || member.email?.split("@")[0] || "Team Member";
+  return member.name || member.displayName || member.email?.split("@")[0] || "Friend";
 }
 
 function renderProjectMemberOptions(containerId, selectedIds = []) {
@@ -170,8 +170,7 @@ export async function addNewProject() {
       return;
     }
 
-    const project = await createProjectRecord({ name, desc: desc || "No description", color, status, memberIds: mIds });
-    state.projects.unshift(project);
+    await createProjectRecord({ name, desc: desc || "No description", color, status, memberIds: mIds });
 
     // Notify members
     mIds.forEach(mId => {
@@ -181,15 +180,11 @@ export async function addNewProject() {
           type: "project",
           icon: "project",
           title: "Added to project",
-          body: `You were added to project "${name}" by ${auth.currentUser?.displayName || "a teammate"}`,
-          project: name,
-          time: "Just now"
+          body: `You were added to project "${name}" by ${auth.currentUser?.displayName || "a friend"}`,
+          project: name
         }).catch(console.error);
       }
     });
-
-    renderSidebarProjects();
-    renderProjectsGrid();
 
     document.getElementById("newProjectName").value = "";
     document.getElementById("newProjectDesc").value = "";
@@ -265,7 +260,7 @@ export async function saveEditProject() {
 
   try {
     const previousName = project.name;
-    const updates = await updateProjectRecord(id, {
+    await updateProjectRecord(id, {
       name,
       desc: desc || "No description",
       color,
@@ -273,16 +268,7 @@ export async function saveEditProject() {
       memberIds
     }, previousName);
 
-    Object.assign(project, updates);
-    state.tasks.forEach((task) => {
-      if (task.project === previousName) task.project = name;
-    });
-    if (state.currentProject === previousName) state.currentProject = name;
-
     closeEditProjectModal();
-    renderSidebarProjects();
-    renderProjectsGrid(name);
-    renderTasks();
     window.renderTeamGrid?.();
     showToast(`Project "${name}" updated`);
   } catch (err) {
@@ -318,15 +304,9 @@ export async function deleteProject(id) {
         }).catch(console.error);
       }
     });
-    state.tasks.forEach(t => { if (t.project === p.name) t.project = 'Unassigned'; });
-    const idx = state.projects.findIndex(x => x.id === id);
-    if (idx !== -1) state.projects.splice(idx, 1);
 
     if (state.currentProject === p.name) state.currentProject = 'all';
 
-    renderSidebarProjects();
-    renderProjectsGrid();
-    renderTasks();
     showToast(`Project "${p.name}" deleted`);
   } catch (err) {
     showToast("Failed to delete project", "error");

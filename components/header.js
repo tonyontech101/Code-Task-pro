@@ -47,7 +47,8 @@ class AppHeader extends HTMLElement {
     }
 
     // Listen for auth-ready event to update user info
-    window.addEventListener("auth-ready", (e) => {
+    window.addEventListener("auth-ready", async (e) => {
+      const { escapeHtml } = await import('../js/modules/utils.js');
       const user = e.detail.user;
       const name = user.displayName || user.email || "User";
       const initials = name.split(/[\s@]/)
@@ -60,8 +61,16 @@ class AppHeader extends HTMLElement {
       const avatarEl = document.getElementById("userAvatar");
       const nameEl   = document.getElementById("userName");
 
-      if (avatarEl) avatarEl.textContent = initials;
-      if (nameEl)   nameEl.textContent   = name.split("@")[0]; // email prefix or display name
+      if (avatarEl) {
+        if (user.photoURL) {
+          avatarEl.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" />`;
+          avatarEl.classList.remove('bg-gradient-to-br', 'from-purple', 'to-cyan');
+        } else {
+          avatarEl.textContent = initials;
+          avatarEl.classList.add('bg-gradient-to-br', 'from-purple', 'to-cyan');
+        }
+      }
+      if (nameEl) nameEl.textContent = name.split("@")[0];
     });
   }
 }

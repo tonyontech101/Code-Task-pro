@@ -319,7 +319,7 @@ export async function toggleNoteScope() {
               type: "mention", // Or a new type 'note'
               icon: "project",
               title: "New shared note",
-              body: `${auth.currentUser?.displayName || "A teammate"} shared a new note: "${note.title || "Untitled"}"`,
+              body: `${auth.currentUser?.displayName || "A friend"} shared a new note: "${note.title || "Untitled"}"`,
               project: "Notes"
             }).catch(console.error);
           }

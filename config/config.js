@@ -62,7 +62,7 @@ async function writeUserProfile(user, overrides = {}) {
     uid: user.uid,
     displayName,
     email,
-    photoURL: overrides.photoURL ?? user.photoURL ?? null,
+    photoURL: overrides.photoURL || user.photoURL || null,
     jobTitle: overrides.jobTitle || "Team Member",
     onlineStatus: overrides.onlineStatus || "offline",
     lastSeen: Date.now(),

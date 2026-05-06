@@ -34,7 +34,7 @@ class AppSettingsPage extends HTMLElement {
 
             <div class="bg-overlay border border-white/5 rounded-2xl p-6 mb-6">
               <div class="flex items-center gap-4 mb-6">
-                <div id="profileAvatar" class="w-14 h-14 rounded-2xl bg-cyan/10 text-cyan flex items-center justify-center text-[20px] font-bold">U</div>
+                <div id="profileAvatar" class="w-14 h-14 rounded-full bg-cyan/10 text-cyan flex items-center justify-center text-[20px] font-bold overflow-hidden shadow-lg shadow-black/20 border border-white/5">U</div>
                 <div class="min-w-0">
                   <h3 id="profileDisplayName" class="text-[17px] font-bold text-white truncate">User</h3>
                   <p id="profileDisplayEmail" class="text-[12.5px] text-gray-500 truncate">email@example.com</p>

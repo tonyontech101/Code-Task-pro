@@ -79,13 +79,13 @@
         <div id="pageTeam" class="flex flex-col flex-1 overflow-hidden hidden">
           <div class="flex items-start justify-between px-7 pt-6 pb-4 flex-shrink-0">
             <div>
-              <h1 class="text-[20px] font-bold tracking-tight">Team <span id="teamCount" class="text-[14px] font-medium text-gray-600">(4)</span></h1>
+              <h1 class="text-[20px] font-bold tracking-tight">Friends <span id="teamCount" class="text-[14px] font-medium text-gray-600">(4)</span></h1>
               <p class="text-[12.5px] text-gray-600 mt-0.5">Invite project members and manage access</p>
             </div>
-            <button class="flex items-center gap-1.5 px-4 py-2 bg-cyan text-base text-[13.5px] font-semibold rounded-xl hover:opacity-90 transition-all hover:-translate-y-px active:translate-y-0" onclick="openNewMemberModal()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Invite Member
-            </button>
+              <button onclick="window.openNewMemberModal()" class="flex items-center gap-2 px-4 py-2 bg-cyan/10 hover:bg-cyan/20 text-cyan text-[13px] font-bold rounded-lg transition-all active:scale-[0.98]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                Invite Friend
+              </button>
           </div>
 
           <!-- Team Stats -->
@@ -161,9 +161,9 @@
         </div>
         <!-- Invite Members -->
         <div>
-          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Invite Members</p>
+          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Invite Friends</p>
           <div id="newProjectMembers" class="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
-            <p class="text-[12px] text-gray-600 italic">Add team members first to invite them.</p>
+            <p class="text-[12px] text-gray-600 italic">Add friends first to invite them.</p>
           </div>
         </div>
       </div>
@@ -199,9 +199,9 @@
         </div>
         <!-- Manage Members -->
         <div>
-          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Team Members</p>
+          <p class="text-[11px] font-semibold tracking-widest uppercase text-gray-600 mb-2">Friends</p>
           <div id="editProjectMembers" class="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
-            <p class="text-[12px] text-gray-600 italic">No team members available.</p>
+            <p class="text-[12px] text-gray-600 italic">No friends available.</p>
           </div>
         </div>
       </div>
@@ -215,7 +215,8 @@
   <!-- Invite Member Modal -->
   <div id="memberModalBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center" onclick="closeMemberModalOnBackdrop(event)">
     <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
-      <h3 class="text-[16px] font-bold mb-4">Invite Project Member</h3>
+      <h3 class="text-[16px] font-bold mb-1">Invite Friend</h3>
+      <p class="text-[13px] text-gray-500 mb-4">Send an invitation to join your workspace</p>
       <div class="flex flex-col gap-3">
         <input id="newMemberEmail" type="email" placeholder="Existing user email..." class="modal-input" />
         <select id="newMemberProject" class="modal-input">
@@ -240,16 +241,16 @@
   </div>
 
   <!-- Logout Confirmation Modal -->
-  <div id="logoutModalBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[100] flex items-center justify-center" onclick="closeLogoutModalOnBackdrop(event)">
-    <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-[340px] p-6 text-center" onclick="event.stopPropagation()">
-      <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  <div id="logoutModalBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[60] flex items-center justify-center" onclick="closeLogoutModalOnBackdrop(event)">
+    <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-[320px] p-6 text-center" onclick="event.stopPropagation()">
+      <div class="w-12 h-12 bg-red-500/10 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </div>
-      <h3 class="text-[18px] font-bold text-gray-100 mb-2">Confirm Logout</h3>
-      <p class="text-[14px] text-gray-500 mb-6">Are you sure you want to log out of your account?</p>
+      <h3 class="text-[17px] font-bold mb-2">Logout</h3>
+      <p class="text-[13px] text-gray-500 mb-6">Are you sure you want to sign out of CodeFlow?</p>
       <div class="flex flex-col gap-2">
-        <button class="w-full py-3 bg-red-500 hover:bg-red-600 text-white text-[14px] font-bold rounded-xl transition-colors shadow-lg shadow-red-500/20" onclick="logout()">Logout</button>
-        <button class="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-400 text-[14px] font-medium rounded-xl transition-colors" onclick="closeLogoutModal()">Cancel</button>
+        <button class="w-full py-2.5 bg-red-500 text-base font-bold rounded-xl hover:opacity-90 transition-all" onclick="logout()">Logout</button>
+        <button class="w-full py-2.5 bg-white/5 text-gray-400 font-bold rounded-xl hover:bg-white/10 transition-all" onclick="closeLogoutModal()">Cancel</button>
       </div>
     </div>
   </div>

@@ -188,7 +188,7 @@ async function fetchSharedProjectTasks(projects = []) {
       sourceProjectId: project.sourceProjectId,
       ownerUid: project.ownerUid,
       sharedProjectName: project.name,
-      readOnly: true,
+      readOnly: false, // Allow editing shared tasks if you are a member
       sharedTask: true
     }));
   });
@@ -341,24 +341,40 @@ export function subscribeToVisibleNotes(projects = state.projects, onChange, onE
 
 export async function createTaskRecord(payload) {
   const timestamp = Date.now();
-  const ref = await addDoc(userCollection(COLLECTIONS.tasks), {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No authenticated user");
+
+  // Determine which user's collection this task belongs to.
+  // If it's part of a shared project, it should go to the project owner's collection.
+  let targetOwnerUid = user.uid;
+  if (payload.project && payload.project !== "Unassigned") {
+    const proj = state.projects.find(p => p.name === payload.project);
+    if (proj && proj.ownerUid && proj.ownerUid !== user.uid) {
+      targetOwnerUid = proj.ownerUid;
+    }
+  }
+
+  const ref = await addDoc(collection(db, "users", targetOwnerUid, COLLECTIONS.tasks), {
     ...payload,
-    ownerUid: requireUserId(),
+    ownerUid: targetOwnerUid,
+    creatorUid: user.uid,
     createdAt: timestamp,
     updatedAt: timestamp
   });
 
-  return { id: ref.id, ...payload, ownerUid: auth.currentUser.uid, createdAt: timestamp, updatedAt: timestamp };
+  return { id: ref.id, ...payload, ownerUid: targetOwnerUid, creatorUid: user.uid, createdAt: timestamp, updatedAt: timestamp };
 }
 
-export async function updateTaskRecord(id, payload) {
+export async function updateTaskRecord(id, payload, ownerUid) {
   const updatedAt = Date.now();
-  await updateDoc(userDoc(COLLECTIONS.tasks, id), { ...payload, updatedAt });
+  const docRef = doc(db, "users", ownerUid || requireUserId(), COLLECTIONS.tasks, id);
+  await updateDoc(docRef, { ...payload, updatedAt });
   return { ...payload, updatedAt };
 }
 
-export async function deleteTaskRecord(id) {
-  await deleteDoc(userDoc(COLLECTIONS.tasks, id));
+export async function deleteTaskRecord(id, ownerUid) {
+  const docRef = doc(db, "users", ownerUid || requireUserId(), COLLECTIONS.tasks, id);
+  await deleteDoc(docRef);
 }
 
 export async function createProjectRecord(payload) {
@@ -458,24 +474,12 @@ export async function deleteMemberRecord(id) {
   });
 
   if (targetMemberUid) {
-    const projectIds = new Set(memberData.projectIds || []);
-    projectsSnapshot.forEach((projectDoc) => projectIds.add(projectDoc.id));
-
-    projectIds.forEach((projectId) => {
-      batch.delete(doc(db, "users", targetMemberUid, COLLECTIONS.projects, `shared_${projectId}`));
-    });
-
-    const teamNotesQuery = query(
-      collection(db, COLLECTIONS.teamNotes),
-      where("participantUids", "array-contains", targetMemberUid)
-    );
-    const teamNotesSnapshot = await getDocs(teamNotesQuery);
-    teamNotesSnapshot.forEach((noteDoc) => {
-      if (noteDoc.data().workspaceUid !== requireUserId()) return;
-      batch.update(noteDoc.ref, {
-        participantUids: arrayRemove(targetMemberUid),
-        updatedAt: Date.now()
-      });
+    // Reciprocal Disconnection: Remove the current user from the target friend's workspace
+    const targetFriendMembersRef = collection(db, "users", targetMemberUid, "members");
+    const reciprocalQuery = query(targetFriendMembersRef, where("uid", "==", requireUserId()));
+    const reciprocalSnap = await getDocs(reciprocalQuery);
+    reciprocalSnap.forEach((reciprocalDoc) => {
+      batch.delete(reciprocalDoc.ref);
     });
   }
 
@@ -593,8 +597,8 @@ export async function ensureUserProfile() {
     uid: user.uid,
     displayName: displayNameFromUser(user),
     email: normalizeEmail(user.email),
-    photoURL: user.photoURL || null,
-    jobTitle: existingData.jobTitle || "Team Member",
+    photoURL: user.photoURL || existingData.photoURL || null,
+    jobTitle: existingData.jobTitle || "Friend",
     onlineStatus: existingData.onlineStatus || "online",
     lastSeen: Date.now(),
     updatedAt: Date.now()
@@ -656,18 +660,20 @@ export async function sendProjectInvitation(targetUser, projectId, role) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) throw new Error("INVALID_EMAIL");
   if (targetUid === sender.uid || targetEmail === normalizeEmail(sender.email)) throw new Error("SELF_INVITE");
 
-  const projectRef = userDoc(COLLECTIONS.projects, projectId);
-  const projectSnap = await getDoc(projectRef);
-  if (!projectSnap.exists()) throw new Error("PROJECT_NOT_FOUND");
-
-  const project = { id: projectSnap.id, ...projectSnap.data() };
-  if (project.ownerUid && project.ownerUid !== sender.uid) throw new Error("NOT_PROJECT_OWNER");
+  let project = { name: "Workspace", color: "#94a3b8", desc: "Friend-wide access" };
+  if (projectId) {
+    const projectRef = userDoc(COLLECTIONS.projects, projectId);
+    const projectSnap = await getDoc(projectRef);
+    if (!projectSnap.exists()) throw new Error("PROJECT_NOT_FOUND");
+    project = { id: projectSnap.id, ...projectSnap.data() };
+    if (project.ownerUid && project.ownerUid !== sender.uid) throw new Error("NOT_PROJECT_OWNER");
+  }
 
   const dupeQuery = query(
     collection(db, COLLECTIONS.invitations),
     where("senderUid", "==", sender.uid),
     where("targetEmail", "==", targetEmail),
-    where("projectId", "==", projectId),
+    where("projectId", "==", projectId || ""),
     where("status", "==", "pending")
   );
   const dupeSnap = await getDocs(dupeQuery);
@@ -681,11 +687,12 @@ export async function sendProjectInvitation(targetUser, projectId, role) {
     targetName: targetUser?.displayName || targetUser?.name || targetEmail.split("@")[0] || "User",
     targetEmail,
     targetPhotoURL: targetUser?.photoURL || null,
-    projectId,
+    projectId: projectId || "",
     projectName: project.name,
     projectColor: project.color || "#00d4c8",
     projectDesc: project.desc || "",
     role,
+    senderPhotoURL: sender.photoURL || null,
     status: "pending",
     createdAt: Date.now()
   });
@@ -769,6 +776,7 @@ export function subscribeToPendingInvitations(onChange, onError) {
 }
 
 export async function acceptInvitationRecord(invitationId) {
+  if (!invitationId) throw new Error("Missing invitation ID");
   const uid = requireUserId();
   const invRef = doc(db, COLLECTIONS.invitations, invitationId);
   const invSnap = await getDoc(invRef);
@@ -780,10 +788,6 @@ export async function acceptInvitationRecord(invitationId) {
   const targetMatchesCurrentUser = inv.targetUid === uid || targetEmail === currentEmail;
   if (!targetMatchesCurrentUser) throw new Error("NOT_INVITATION_TARGET");
   if (inv.status !== "pending") throw new Error("INVITATION_NOT_PENDING");
-
-  const ownerProjectRef = doc(db, "users", inv.senderUid, COLLECTIONS.projects, inv.projectId);
-  const ownerProjectSnap = await getDoc(ownerProjectRef);
-  if (!ownerProjectSnap.exists()) throw new Error("PROJECT_NOT_FOUND");
 
   const timestamp = Date.now();
   const senderMembersRef = collection(db, "users", inv.senderUid, "members");
@@ -797,7 +801,7 @@ export async function acceptInvitationRecord(invitationId) {
     status: "offline",
     uid,
     photoURL: auth.currentUser?.photoURL || inv.targetPhotoURL || null,
-    projectIds: [inv.projectId],
+    projectIds: inv.projectId ? [inv.projectId] : [],
     joinedAt: timestamp,
     createdAt: timestamp,
     updatedAt: timestamp
@@ -813,20 +817,24 @@ export async function acceptInvitationRecord(invitationId) {
   } else {
     const memberRef = memberSnap.docs[0].ref;
     memberId = memberSnap.docs[0].id;
-    batch.update(memberRef, {
+    const updates = {
       name: memberPayload.name,
       email: memberPayload.email,
       role: inv.role,
       photoURL: memberPayload.photoURL,
-      projectIds: arrayUnion(inv.projectId),
+      updatedAt: timestamp
+    };
+    if (inv.projectId) updates.projectIds = arrayUnion(inv.projectId);
+    batch.update(memberRef, updates);
+  }
+
+  if (inv.projectId) {
+    const ownerProjectRef = doc(db, "users", inv.senderUid, COLLECTIONS.projects, inv.projectId);
+    batch.update(ownerProjectRef, {
+      memberIds: arrayUnion(memberId),
       updatedAt: timestamp
     });
   }
-
-  batch.update(ownerProjectRef, {
-    memberIds: arrayUnion(memberId),
-    updatedAt: timestamp
-  });
 
   const teamNotesQuery = query(
     collection(db, COLLECTIONS.teamNotes),
@@ -840,21 +848,52 @@ export async function acceptInvitationRecord(invitationId) {
     });
   });
 
-  batch.set(doc(db, "users", uid, COLLECTIONS.projects, `shared_${inv.projectId}`), {
-    name: inv.projectName,
-    desc: inv.projectDesc || `Shared by ${inv.senderName}`,
-    color: inv.projectColor || "#00d4c8",
-    status: "active",
-    ownerUid: inv.senderUid,
-    ownerName: inv.senderName,
-    ownerEmail: inv.senderEmail,
-    sourceProjectId: inv.projectId,
-    memberRole: inv.role,
+  if (inv.projectId) {
+    batch.set(doc(db, "users", uid, COLLECTIONS.projects, `shared_${inv.projectId}`), {
+      name: inv.projectName,
+      desc: inv.projectDesc || `Shared by ${inv.senderName}`,
+      color: inv.projectColor || "#00d4c8",
+      status: "active",
+      ownerUid: inv.senderUid,
+      ownerName: inv.senderName,
+      ownerEmail: inv.senderEmail,
+      sourceProjectId: inv.projectId,
+      memberRole: inv.role,
+      joinedAt: timestamp,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      memberIds: []
+    }, { merge: true });
+  }
+
+  // Reciprocal Friendship: Add the sender as a member in the target user's workspace
+  const targetMembersRef = collection(db, "users", uid, "members");
+  const senderAsMemberQuery = query(targetMembersRef, where("uid", "==", inv.senderUid));
+  const senderAsMemberSnap = await getDocs(senderAsMemberQuery);
+
+  const senderAsMemberPayload = {
+    name: inv.senderName || inv.senderEmail.split("@")[0] || "Friend",
+    email: inv.senderEmail,
+    role: "Friend", // Default role for mutual friendship
+    status: "offline",
+    uid: inv.senderUid,
+    photoURL: inv.senderPhotoURL || null,
+    projectIds: [], // Workspace-only for the reciprocal link unless it's a mutual project
     joinedAt: timestamp,
     createdAt: timestamp,
-    updatedAt: timestamp,
-    memberIds: []
-  }, { merge: true });
+    updatedAt: timestamp
+  };
+
+  if (senderAsMemberSnap.empty) {
+    batch.set(doc(targetMembersRef), senderAsMemberPayload);
+  } else {
+    batch.update(senderAsMemberSnap.docs[0].ref, {
+      name: senderAsMemberPayload.name,
+      email: senderAsMemberPayload.email,
+      photoURL: senderAsMemberPayload.photoURL,
+      updatedAt: timestamp
+    });
+  }
 
   batch.update(invRef, {
     status: "accepted",
@@ -870,6 +909,7 @@ export async function acceptInvitationRecord(invitationId) {
 }
 
 export async function declineInvitationRecord(invitationId) {
+  if (!invitationId) throw new Error("Missing invitation ID");
   const uid = requireUserId();
   const invRef = doc(db, COLLECTIONS.invitations, invitationId);
   const invSnap = await getDoc(invRef);

@@ -5,6 +5,7 @@
 import { state } from '../modules/state.js';
 import { navigateToPage } from '../modules/navigation.js';
 import { showToast, escapeHtml, playNotifSound, timeAgo } from '../modules/utils.js';
+import { auth } from '../../config/config.js';
 import { createTaskRecord, deleteTaskRecord, updateTaskRecord, createInboxItem, arrayUnion } from '../modules/data-store.js';
 
 function getTaskKey(task) {
@@ -99,10 +100,7 @@ function updateDashboardMeta(filtered) {
 
 export async function toggleTask(id) {
   const t = findTaskByKey(id);
-  if (t?.readOnly) {
-    showToast("Shared project tasks are view-only", "warning");
-    return;
-  }
+  // Shared project members can now toggle tasks
   if (t) { 
     const nextDone = !t.done;
     t.done = nextDone;
@@ -115,7 +113,8 @@ export async function toggleTask(id) {
       await updateTaskRecord(t.id, { 
         done: nextDone,
         activity: arrayUnion({ text: nextDone ? "Marked as complete" : "Marked as active", time: timestamp })
-      });
+      }, t.ownerUid);
+      if (nextDone) checkProjectCompletion(t.project);
     } catch (err) {
       t.done = !nextDone;
       renderTasks();
@@ -130,11 +129,8 @@ export async function deleteTask(id) {
     const idx = state.tasks.findIndex(x => getTaskKey(x) === id || x.id === id);
     if (idx !== -1) {
       const task = state.tasks[idx];
-      if (task.readOnly) {
-        showToast("Shared project tasks are view-only", "warning");
-        return;
-      }
-      await deleteTaskRecord(task.id);
+      
+      await deleteTaskRecord(task.id, task.ownerUid);
       
       // Notify members if it belongs to a project
       if (task.project && task.project !== "Unassigned") {
@@ -159,6 +155,7 @@ export async function deleteTask(id) {
       if (state.selectedTaskId === id || state.selectedTaskId === getTaskKey(task)) window.closeDetailPanel();
       renderTasks();
       showToast(`Task "${task.title}" deleted`);
+      checkProjectCompletion(task.project);
     }
   } catch (err) {
     showToast("Failed to delete task", "error");
@@ -278,6 +275,31 @@ export async function addNewTask() {
       activity: [{ text: "Just created", time: Date.now() }]
     });
 
+    // Notify project members
+    if (project && project !== "Unassigned") {
+      const proj = state.projects.find(p => p.name === project);
+      if (proj) {
+        const recipients = new Set(proj.memberIds || []);
+        if (proj.ownerUid) recipients.add(proj.ownerUid);
+        
+        recipients.forEach(targetIdOrUid => {
+          let targetUid = targetIdOrUid;
+          const member = state.members.find(m => String(m.id) === String(targetIdOrUid));
+          if (member) targetUid = member.uid;
+          
+          if (targetUid && targetUid !== auth.currentUser?.uid) {
+            createInboxItem(targetUid, {
+              type: "task",
+              icon: "task",
+              title: "New task added",
+              body: `"${title}" has been added to project "${project}"`,
+              project: project
+            }).catch(console.error);
+          }
+        });
+      }
+    }
+
     window.closeNewTaskModal();
     showToast(`Task created successfully`);
   } catch (err) {
@@ -290,10 +312,7 @@ export function editTask() {
   const task = findTaskByKey(state.selectedTaskId);
   if (!task) return;
 
-  if (task.readOnly) {
-    showToast("Shared project tasks are view-only", "warning");
-    return;
-  }
+  // Shared project members can now edit tasks
 
   document.getElementById("taskModalTitle").textContent = "Edit Task";
   const submitBtn = document.getElementById("taskModalSubmit");
@@ -355,13 +374,14 @@ export async function saveEditTask() {
       activity: arrayUnion({ text: "Edited task details", time: Date.now() })
     };
 
-    await updateTaskRecord(task.id, updates);
+    await updateTaskRecord(task.id, updates, task.ownerUid);
     
     // UI will be updated via onSnapshot in main.js, 
     // but we refresh the details panel manually
     window.closeNewTaskModal();
     showDetailPanel(getTaskKey(task));
     showToast(`Task updated successfully`);
+    checkProjectCompletion(project);
   } catch (err) {
     showToast("Failed to update task", "error");
     console.error(err);
@@ -451,4 +471,44 @@ export function closeDetailPanel() {
   document.getElementById("detailPanel")?.classList.add("hidden");
   state.selectedTaskId = null;
   renderTasks();
+}
+
+async function checkProjectCompletion(projectName) {
+  if (!projectName || projectName === "all" || projectName === "Unassigned") return;
+  
+  const projectTasks = state.tasks.filter(t => t.project === projectName);
+  if (projectTasks.length === 0) return;
+  
+  const allDone = projectTasks.every(t => t.done);
+  if (allDone) {
+    const project = state.projects.find(p => p.name === projectName);
+    if (!project) return;
+    
+    const notification = {
+      type: "project",
+      icon: "project",
+      title: "Project Completed! 🎉",
+      body: `All tasks in "${projectName}" have been finished. Great job!`,
+      project: projectName
+    };
+
+    try {
+      // Notify owner
+      if (project.ownerUid) {
+        await createInboxItem(project.ownerUid, notification);
+      }
+      
+      // Notify members
+      if (project.memberIds) {
+        for (const mId of project.memberIds) {
+          const member = state.members.find(m => String(m.id) === String(mId));
+          if (member && member.uid && member.uid !== project.ownerUid) {
+            await createInboxItem(member.uid, notification).catch(console.error);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to send project completion notification:", err);
+    }
+  }
 }

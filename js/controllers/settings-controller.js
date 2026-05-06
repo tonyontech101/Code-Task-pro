@@ -4,6 +4,7 @@
 
 import { state } from '../modules/state.js';
 import { auth } from '../../config/config.js';
+import { escapeHtml } from '../modules/utils.js';
 
 function getProfileName() {
   return auth.currentUser?.displayName || auth.currentUser?.email?.split("@")[0] || "User";
@@ -87,7 +88,15 @@ export function renderProfileSettings() {
   if (emailInput) emailInput.value = email;
   if (displayName) displayName.textContent = name;
   if (displayEmail) displayEmail.textContent = email || "No email available";
-  if (avatar) avatar.textContent = initials;
+  if (avatar) {
+    if (user?.photoURL) {
+      avatar.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" />`;
+      avatar.classList.remove('bg-gradient-to-br', 'from-purple', 'to-cyan');
+    } else {
+      avatar.textContent = initials;
+      avatar.classList.add('bg-gradient-to-br', 'from-purple', 'to-cyan');
+    }
+  }
   if (completedEl) completedEl.textContent = completed;
   if (todoEl) todoEl.textContent = todo;
   if (projectsEl) projectsEl.textContent = projects;

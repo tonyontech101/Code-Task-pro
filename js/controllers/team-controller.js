@@ -10,7 +10,7 @@ import { renderProjectsGrid } from './projects-controller.js';
 import { renderSidebarProjects } from './dashboard-controller.js';
 
 function memberName(member) {
-  return member.name || member.displayName || member.email?.split("@")[0] || "Team Member";
+  return member.name || member.displayName || member.email?.split("@")[0] || "Friend";
 }
 
 function memberInitials(member) {
@@ -19,7 +19,7 @@ function memberInitials(member) {
     .map(w => w[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || "TM";
+    .slice(0, 2) || "FR";
 }
 
 function inlineJsArg(value) {
@@ -52,14 +52,16 @@ export function prepareInviteMemberModal() {
   const select = document.getElementById("newMemberProject");
   if (select) {
     const projects = ownedProjects();
-    select.innerHTML = projects.length
-      ? projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)}</option>`).join("")
-      : `<option value="">Create a project first</option>`;
-    select.disabled = projects.length === 0;
+    let options = `<option value="">None (Workspace access only)</option>`;
+    if (projects.length > 0) {
+      options += projects.map(project => `<option value="${escapeHtml(project.id)}">${escapeHtml(project.name)}</option>`).join("");
+    }
+    select.innerHTML = options;
+    select.disabled = false;
   }
 
   const submit = document.getElementById("inviteMemberSubmit");
-  if (submit) submit.disabled = ownedProjects().length === 0;
+  if (submit) submit.disabled = false;
 }
 
 export function renderTeamGrid() {
@@ -67,12 +69,13 @@ export function renderTeamGrid() {
   const count = document.getElementById("teamCount");
   if (!grid) return;
 
-  if (count) count.textContent = `(${state.members.length})`;
+  const members = state.members;
+  if (count) count.textContent = `(${members.length})`;
 
   // Update stats
-  const online  = state.members.filter(m => m.status === "online").length;
-  const away    = state.members.filter(m => m.status === "away").length;
-  const offline = state.members.filter(m => m.status === "offline").length;
+  const online  = members.filter(m => m.status === "online").length;
+  const away    = members.filter(m => m.status === "away").length;
+  const offline = members.filter(m => m.status === "offline").length;
 
   const statOnline  = document.getElementById("statOnline");
   const statAway    = document.getElementById("statAway");
@@ -82,26 +85,27 @@ export function renderTeamGrid() {
   if (statAway)    statAway.textContent    = `${away} Away`;
   if (statOffline) statOffline.textContent = `${offline} Offline`;
   if (statTotalTasks) {
-    const totalAssigned = state.members.reduce((sum, member) => {
+    const totalAssigned = members.reduce((sum, member) => {
       const projects = getMemberProjects(member);
       return sum + getMemberTaskCount(member, projects);
     }, 0);
     statTotalTasks.innerHTML = `<span class="font-bold text-cyan font-mono">${totalAssigned}</span> project tasks`;
   }
 
-  if (state.members.length === 0) {
+  if (members.length === 0) {
     grid.innerHTML = `
-      <div class="col-span-full text-center py-20 bg-elevated/50 border border-dashed border-white/10 rounded-2xl">
-        <div class="text-gray-600">
-          <svg class="mx-auto mb-4 opacity-30" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-          <p class="text-[15px] font-semibold text-gray-400 mb-1">No team members yet</p>
-          <p class="text-[13px] text-gray-600">Click <span class="text-cyan font-bold cursor-pointer hover:underline" onclick="window.openNewMemberModal()">Invite Member</span> to get started</p>
+      <div class="col-span-full py-12 flex flex-col items-center justify-center text-center">
+        <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-gray-500 mb-4">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
+        <h3 class="text-gray-300 font-bold">No friends yet</h3>
+        <p class="text-gray-500 text-[13px] mt-1 max-w-[240px]">Invite your friends to collaborate on projects and chat in real-time.</p>
+        <button class="mt-4 px-6 py-2 bg-cyan/10 hover:bg-cyan/20 text-cyan text-[13px] font-bold rounded-lg transition-all" onclick="window.openNewMemberModal()">Invite Friend</button>
       </div>`;
     return;
   }
 
-  grid.innerHTML = state.members.map(m => {
+  grid.innerHTML = members.map(m => {
     const name = memberName(m);
     const initials = memberInitials(m);
     const memberProjects = getMemberProjects(m);
@@ -124,7 +128,7 @@ export function renderTeamGrid() {
             <div class="flex items-center justify-between">
               <h3 class="text-[14.5px] font-bold text-gray-100 truncate">${escapeHtml(name)}</h3>
               <div class="flex items-center gap-2">
-                <button class="text-gray-600 hover:text-red-400 transition-colors" onclick="window.deleteMember(${memberId})" title="Remove member">
+                <button class="text-gray-600 hover:text-red-400 transition-colors" onclick="window.deleteMember(${memberId})" title="Remove friend">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
               </div>
@@ -161,8 +165,8 @@ export async function addNewMember() {
   const role = document.getElementById("newMemberRole").value;
   const projectId = document.getElementById("newMemberProject").value;
 
-  if (!email || !projectId) {
-    showToast("Select a project and enter an existing user's email", "error");
+  if (!email) {
+    showToast("Please enter an existing user's email", "error");
     return;
   }
 
@@ -183,24 +187,18 @@ export async function addNewMember() {
     await sendProjectInvitation(targetUser, projectId, role);
 
     document.getElementById("newMemberEmail").value = "";
-    window.closeNewMemberModal();
-    showToast(`Invitation sent to ${targetUser.email || email}`);
+    showToast("Invitation sent to friend");
+    closeNewMemberModal();
   } catch (err) {
-    const messages = {
-      INVALID_EMAIL: "Enter a valid email address.",
-      SELF_INVITE: "You cannot invite yourself.",
-      DUPLICATE_INVITE: "That user already has a pending invite for this project.",
-      NOT_PROJECT_OWNER: "Only the project owner can invite members.",
-      PROJECT_NOT_FOUND: "Project not found."
-    };
-    showToast(messages[err.message] || "Failed to send invitation", "error");
     console.error(err);
+    showToast(err.message === "USER_NOT_FOUND" ? "User not found" : "Failed to invite friend", "error");
   }
 }
 
 export async function deleteMember(id) {
   const m = state.members.find(x => x.id === id);
   if (!m) return;
+  if (!confirm("Are you sure you want to remove this friend from your workspace?")) return;
   if (!confirm(`Remove ${memberName(m)} from every project in your workspace?`)) return;
 
   try {
@@ -218,7 +216,7 @@ export async function deleteMember(id) {
     renderSidebarProjects();
     showToast(`${memberName(m)} removed`);
   } catch (err) {
-    showToast("Only the project owner can remove members", "error");
+    showToast("Failed to remove friend", "error");
     console.error(err);
   }
 }
