@@ -130,6 +130,10 @@ export function selectNote(id) {
 
   renderNotes();
   renderEditorDetails(note);
+
+  // Close notes sidebar drawer on mobile
+  document.querySelector('.notes-sidebar-drawer')?.classList.remove('translate-x-0');
+  document.querySelector('.notes-sidebar-backdrop')?.classList.add('hidden');
 }
 
 function renderEditorDetails(note) {

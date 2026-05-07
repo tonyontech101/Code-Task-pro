@@ -2,10 +2,10 @@ class AppDetailPanel extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
         <!-- Detail Panel -->
-        <div id="detailPanel" class="w-[320px] flex-shrink-0 bg-surface border-l border-white/[0.06] flex flex-col overflow-hidden hidden">
+        <div id="detailPanel" class="fixed inset-0 z-40 md:relative md:inset-auto md:z-auto md:w-[320px] flex-shrink-0 bg-surface md:border-l border-white/[0.06] flex flex-col overflow-hidden hidden">
           
           <!-- Panel Header -->
-          <div class="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] bg-elevated/30">
+          <div class="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-white/[0.06] bg-elevated/30">
             <div class="flex flex-col gap-0.5">
               <span id="detailStatus" class="text-[10px] font-bold uppercase tracking-widest text-cyan opacity-80 mb-1">Active Task</span>
               <h2 class="text-[16px] font-bold tracking-tight text-gray-100" id="detailTitle">—</h2>
@@ -21,7 +21,7 @@ class AppDetailPanel extends HTMLElement {
           </div>
 
           <div class="flex-1 overflow-y-auto custom-scrollbar">
-            <div class="p-5 flex flex-col gap-6">
+            <div class="p-4 md:p-5 flex flex-col gap-5 md:gap-6">
               
               <!-- Metadata Row -->
               <div class="grid grid-cols-2 gap-3 pb-6 border-b border-white/[0.04]">

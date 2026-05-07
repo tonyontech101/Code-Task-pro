@@ -12,25 +12,25 @@ class AppInboxPage extends HTMLElement {
             <!-- Notifications View (default) -->
             <div id="inboxNotificationsView" class="flex flex-col flex-1 overflow-hidden">
               <!-- Inbox Header -->
-              <div class="flex items-start justify-between px-7 pt-6 pb-4 flex-shrink-0">
+              <div class="flex flex-col sm:flex-row sm:items-start justify-between px-4 md:px-7 pt-5 md:pt-6 pb-3 md:pb-4 flex-shrink-0 gap-3">
                 <div>
-                  <h1 class="text-[20px] font-bold tracking-tight">Inbox <span id="inboxCount" class="text-[14px] font-medium text-gray-600">(0)</span></h1>
+                  <h1 class="text-[18px] md:text-[20px] font-bold tracking-tight">Inbox <span id="inboxCount" class="text-[14px] font-medium text-gray-600">(0)</span></h1>
                   <p class="text-[12.5px] text-gray-600 mt-0.5">Notifications and updates</p>
                 </div>
-                <div class="flex items-center gap-2">
-                  <button id="inboxMarkAllRead" class="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] text-gray-400 bg-overlay border border-white/10 rounded-lg hover:bg-hover hover:text-gray-200 transition-all" onclick="markAllInboxRead()">
+                <div class="flex items-center gap-2 inbox-header-actions">
+                  <button id="inboxMarkAllRead" class="flex items-center gap-1.5 px-3 py-2 md:py-1.5 text-[12.5px] text-gray-400 bg-overlay border border-white/10 rounded-lg hover:bg-hover hover:text-gray-200 transition-all flex-1 sm:flex-none justify-center" onclick="markAllInboxRead()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                    Mark all read
+                    <span>Mark all read</span>
                   </button>
-                  <button class="flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] text-gray-400 bg-overlay border border-white/10 rounded-lg hover:bg-hover hover:text-red-400 transition-all" onclick="clearAllInbox()">
+                  <button class="flex items-center gap-1.5 px-3 py-2 md:py-1.5 text-[12.5px] text-gray-400 bg-overlay border border-white/10 rounded-lg hover:bg-hover hover:text-red-400 transition-all flex-1 sm:flex-none justify-center" onclick="clearAllInbox()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    Clear all
+                    <span>Clear all</span>
                   </button>
                 </div>
               </div>
 
               <!-- Inbox Filter Tabs -->
-              <div class="flex items-center gap-1 px-7 mb-4 flex-shrink-0">
+              <div class="flex items-center gap-1 px-4 md:px-7 mb-4 flex-shrink-0 overflow-x-auto custom-scrollbar pb-1">
                 <button class="inbox-tab active" data-filter="all" onclick="filterInbox('all')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
                   All
@@ -62,7 +62,7 @@ class AppInboxPage extends HTMLElement {
               </div>
 
               <!-- Inbox List -->
-              <div class="flex-1 overflow-y-auto px-7 pb-6">
+              <div class="flex-1 overflow-y-auto px-4 md:px-7 pb-6">
                 <div id="inboxList" class="flex flex-col gap-2">
                   <!-- Populated by renderInbox() -->
                 </div>

@@ -32,6 +32,10 @@ export function setSettingsTab(tabId) {
   });
 
   if (tabId === "profile") renderProfileSettings();
+
+  // Close settings sidebar drawer on mobile
+  document.querySelector('.settings-sidebar-drawer')?.classList.remove('translate-x-0');
+  document.querySelector('.settings-sidebar-backdrop')?.classList.add('hidden');
 }
 
 function renderToggle(toggleId, dotId, enabled) {

@@ -1,12 +1,13 @@
 class AppSettingsPage extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
-      <div class="flex flex-1 overflow-hidden h-full bg-base">
+      <div class="flex flex-1 overflow-hidden h-full bg-base relative">
+        <div class="fixed inset-0 bg-black/60 z-30 hidden settings-sidebar-backdrop backdrop-blur-sm" onclick="document.querySelector('.settings-sidebar-drawer').classList.remove('translate-x-0'); this.classList.add('hidden')"></div>
         <!-- Settings Sidebar -->
-        <div class="w-[240px] flex flex-col border-r border-white/[0.04] bg-surface flex-shrink-0">
+        <div class="settings-sidebar-drawer absolute inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 md:relative md:translate-x-0 w-[85%] max-w-[240px] md:w-[240px] flex flex-col border-r border-white/[0.04] bg-surface flex-shrink-0">
           <div class="p-6">
             <h1 class="text-[18px] font-bold tracking-tight text-white mb-6">Settings</h1>
-            <nav class="flex flex-col gap-1">
+            <nav class="flex flex-col gap-1 custom-scrollbar">
               <button class="settings-nav-btn active" data-tab="profile" onclick="setSettingsTab('profile')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
                 Profile
@@ -25,6 +26,12 @@ class AppSettingsPage extends HTMLElement {
 
         <!-- Settings Content -->
         <div class="flex-1 overflow-y-auto custom-scrollbar" id="settingsContentArea">
+          <div class="md:hidden px-6 pt-6 pb-2">
+            <button class="flex items-center px-4 py-2 bg-surface border border-white/10 rounded-xl text-[13.5px] font-semibold text-gray-300 hover:text-white transition-all" onclick="document.querySelector('.settings-sidebar-drawer').classList.add('translate-x-0'); document.querySelector('.settings-sidebar-backdrop').classList.remove('hidden')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mr-1.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Settings Menu
+            </button>
+          </div>
 
 
           <!-- Profile Section -->

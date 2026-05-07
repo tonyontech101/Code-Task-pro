@@ -1,7 +1,8 @@
 class AppSidebar extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
-        <aside class="flex flex-shrink-0 border-r border-white/[0.06]">
+        <div class="fixed inset-0 bg-black/60 z-40 hidden sidebar-backdrop backdrop-blur-sm" onclick="document.body.classList.remove('sidebar-open')"></div>
+        <aside class="fixed inset-y-0 left-0 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-200 ease-in-out flex flex-shrink-0 border-r border-white/[0.06] bg-base h-full">
 
         <!-- Icon Rail -->
         <nav class="flex flex-col items-center w-14 py-3 gap-0.5 border-r border-white/[0.06] bg-surface">
@@ -42,7 +43,7 @@ class AppSidebar extends HTMLElement {
         </nav>
 
         <!-- Sidebar Panel: Default (Projects/Priority/Labels) -->
-        <div id="sidebarDefaultPanel" class="w-[220px] bg-surface flex flex-col py-5 gap-2 overflow-y-auto">
+        <div id="sidebarDefaultPanel" class="w-[220px] bg-surface flex flex-col py-5 gap-2 overflow-y-auto h-full">
 
             <!-- Projects (dynamically rendered by app.js) --> 
             <div class="px-3 mb-2">
@@ -106,7 +107,7 @@ class AppSidebar extends HTMLElement {
         </div>
 
         <!-- Sidebar Panel: Inbox Chats (hidden by default) -->
-        <div id="sidebarInboxPanel" class="w-[220px] bg-surface flex flex-col overflow-hidden hidden">
+        <div id="sidebarInboxPanel" class="w-[220px] bg-surface flex flex-col overflow-hidden hidden h-full">
 
             <!-- Inbox Sidebar Header -->
             <div class="flex items-center justify-between px-4 pt-4 pb-2">

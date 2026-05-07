@@ -3,7 +3,7 @@ class AppTaskModal extends HTMLElement {
     this.innerHTML = `
       <!-- New Task Modal -->
       <div id="modalBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center" onclick="closeModalOnBackdrop(event)">
-        <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
+        <div class="bg-elevated border border-white/10 rounded-2xl w-full max-w-md mx-4 p-6" onclick="event.stopPropagation()">
           <h3 class="text-[16px] font-bold mb-4" id="taskModalTitle">New Task</h3>
           <div class="flex flex-col gap-3">
             <input id="newTaskTitle" type="text" placeholder="Task title..." class="modal-input" />

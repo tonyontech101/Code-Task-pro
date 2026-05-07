@@ -19,6 +19,9 @@ export function navigateToPage(pageId) {
   const target = document.getElementById(pageId);
   if (target) target.classList.remove("hidden");
 
+  // Close mobile sidebar on navigation
+  document.body.classList.remove('sidebar-open');
+
   // Sync rail buttons
   const railIndex = PAGE_IDS.indexOf(pageId);
   const railBtns  = document.querySelectorAll(".rail-btn");

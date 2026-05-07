@@ -1,9 +1,10 @@
 class AppNotesPage extends HTMLElement {
   connectedCallback() {
     this.innerHTML = `
-      <div class="flex flex-1 overflow-hidden h-full bg-base">
+      <div class="flex flex-1 overflow-hidden h-full bg-base relative">
+        <div class="fixed inset-0 bg-black/60 z-30 hidden notes-sidebar-backdrop backdrop-blur-sm" onclick="document.querySelector('.notes-sidebar-drawer').classList.remove('translate-x-0'); this.classList.add('hidden')"></div>
         <!-- Notes Sidebar -->
-        <div class="w-[320px] flex flex-col border-r border-white/[0.04] bg-surface flex-shrink-0">
+        <div class="notes-sidebar-drawer absolute inset-y-0 left-0 z-40 transform -translate-x-full transition-transform duration-200 md:relative md:translate-x-0 w-[85%] max-w-[320px] md:w-[320px] h-full flex flex-col border-r border-white/[0.04] bg-surface flex-shrink-0">
           <div class="p-5 flex flex-col gap-4">
             <div class="flex items-center justify-between">
               <h1 class="text-[18px] font-bold tracking-tight text-white">Notes</h1>
@@ -43,15 +44,24 @@ class AppNotesPage extends HTMLElement {
             </div>
             <h2 class="text-[18px] font-bold text-gray-400">No Note Selected</h2>
             <p class="text-[14px] text-gray-600 mt-2 max-w-[280px]">Select a note from the sidebar or create a new one to start writing.</p>
-            <button class="mt-8 px-6 py-2.5 bg-overlay border border-white/10 rounded-xl text-[13.5px] font-semibold text-gray-400 hover:text-cyan hover:border-cyan/30 transition-all active:scale-95" onclick="addNote()">
-              + Create New Note
-            </button>
+            <div class="flex gap-3 mt-8">
+              <button class="md:hidden flex items-center px-4 py-2.5 bg-surface border border-white/10 rounded-xl text-[13.5px] font-semibold text-gray-300 hover:text-white transition-all" onclick="document.querySelector('.notes-sidebar-drawer').classList.add('translate-x-0'); document.querySelector('.notes-sidebar-backdrop').classList.remove('hidden')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mr-1.5"><polyline points="15 18 9 12 15 6"/></svg>
+                Notes List
+              </button>
+              <button class="px-4 py-2.5 bg-overlay border border-white/10 rounded-xl text-[13.5px] font-semibold text-cyan hover:border-cyan/30 transition-all active:scale-95" onclick="addNote()">
+                + Create New
+              </button>
+            </div>
           </div>
 
           <!-- Editor Header -->
-          <div id="noteEditorHeader" class="hidden flex items-center justify-between px-8 py-4 border-b border-white/[0.04] bg-surface/50 backdrop-blur-md z-20">
-            <div class="flex items-center gap-4">
-              <div id="noteEditorScope" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/10 text-gray-500">Personal</div>
+          <div id="noteEditorHeader" class="hidden flex items-center justify-between px-4 md:px-8 py-4 border-b border-white/[0.04] bg-surface/50 backdrop-blur-md z-20">
+            <div class="flex items-center gap-2 md:gap-4">
+              <button class="md:hidden flex items-center justify-center w-8 h-8 text-gray-400 hover:text-white mr-1" onclick="document.querySelector('.notes-sidebar-drawer').classList.add('translate-x-0'); document.querySelector('.notes-sidebar-backdrop').classList.remove('hidden')">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div id="noteEditorScope" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-white/10 text-gray-500 hidden sm:block">Personal</div>
               <div id="noteEditorDate" class="text-[12px] text-gray-600 font-medium">Last edited: Just now</div>
             </div>
             <div class="flex items-center gap-2">
