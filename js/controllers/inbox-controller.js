@@ -219,7 +219,7 @@ export function openChat(contactId) {
   if (headerAvatar) {
     headerAvatar.className = `chat-header-avatar bg-gradient-to-br ${getContactGradient(contactId)}`;
     if (contact.photoURL) {
-      headerAvatar.innerHTML = `<img src="${escapeHtml(contact.photoURL)}" class="w-full h-full rounded-full object-cover" />`;
+      headerAvatar.innerHTML = `<img src="${escapeHtml(contact.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'; this.parentElement.className='chat-header-avatar bg-gradient-to-br ${getContactGradient(contactId)}';" />`;
     } else {
       headerAvatar.textContent = initials;
     }
@@ -279,7 +279,7 @@ export function renderChatMessages() {
     const name = contact.name || contact.displayName || contact.email?.split('@')[0] || "Friend";
     const initials = (name[0] || "U").toUpperCase();
     const avatarHtml = contact.photoURL 
-      ? `<img src="${escapeHtml(contact.photoURL)}" class="w-16 h-16 rounded-full object-cover" />`
+      ? `<img src="${escapeHtml(contact.photoURL)}" class="w-16 h-16 rounded-full object-cover" onerror="this.outerHTML = '<div class=\'w-16 h-16 rounded-full bg-gradient-to-br ${getContactGradient(contact.uid)} flex items-center justify-center text-xl font-bold text-white\'>${initials}</div>';" />`
       : `<div class="w-16 h-16 rounded-full bg-gradient-to-br ${getContactGradient(contact.uid)} flex items-center justify-center text-xl font-bold text-white">${initials}</div>`;
 
     const teammateTasks = state.tasks.filter(t => t.ownerUid === contact.uid || (t.assignee && t.assignee.uid === contact.uid));
@@ -399,7 +399,7 @@ export function renderSidebarChatList(query = "") {
     const preview = lastMsg ? (lastMsg.from === 'me' ? 'You: ' : '') + lastMsg.text : 'No messages yet';
 
     const avatarHtml = c.photoURL 
-      ? `<img src="${escapeHtml(c.photoURL)}" class="sidebar-chat-avatar object-cover" />`
+      ? `<img src="${escapeHtml(c.photoURL)}" class="sidebar-chat-avatar object-cover" onerror="this.outerHTML = '<div class=\'sidebar-chat-avatar bg-gradient-to-br ${getContactGradient(c.uid)}\'>${c.avatar}</div>';" />`
       : `<div class="sidebar-chat-avatar bg-gradient-to-br ${getContactGradient(c.uid)}">${c.avatar}</div>`;
 
     return `

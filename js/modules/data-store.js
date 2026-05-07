@@ -461,7 +461,6 @@ export async function deleteMemberRecord(id) {
   const memberData = memberSnap.data();
 
   const batch = writeBatch(db);
-
   batch.delete(memberRef);
 
   const projectsQuery = query(userCollection(COLLECTIONS.projects), where("memberIds", "array-contains", id));
@@ -473,17 +472,26 @@ export async function deleteMemberRecord(id) {
     });
   });
 
-  if (targetMemberUid) {
-    // Reciprocal Disconnection: Remove the current user from the target friend's workspace
-    const targetFriendMembersRef = collection(db, "users", targetMemberUid, "members");
-    const reciprocalQuery = query(targetFriendMembersRef, where("uid", "==", requireUserId()));
-    const reciprocalSnap = await getDocs(reciprocalQuery);
-    reciprocalSnap.forEach((reciprocalDoc) => {
-      batch.delete(reciprocalDoc.ref);
-    });
-  }
-
   await batch.commit();
+
+  if (targetMemberUid) {
+    try {
+      // Reciprocal Disconnection: Best effort to remove the current user from the target friend's workspace
+      const targetFriendMembersRef = collection(db, "users", targetMemberUid, "members");
+      const reciprocalQuery = query(targetFriendMembersRef, where("uid", "==", requireUserId()));
+      const reciprocalSnap = await getDocs(reciprocalQuery);
+      
+      if (!reciprocalSnap.empty) {
+        const reciprocalBatch = writeBatch(db);
+        reciprocalSnap.forEach((reciprocalDoc) => {
+          reciprocalBatch.delete(reciprocalDoc.ref);
+        });
+        await reciprocalBatch.commit();
+      }
+    } catch (err) {
+      console.warn("Reciprocal disconnection skipped or failed (permission denied):", err);
+    }
+  }
 }
 
 export async function createNoteRecord(payload) {

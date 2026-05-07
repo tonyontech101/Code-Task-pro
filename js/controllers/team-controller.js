@@ -114,7 +114,7 @@ export function renderTeamGrid() {
     const status = m.status === "online" ? "online" : "offline";
     const memberId = inlineJsArg(m.id);
     const avatar = m.photoURL
-      ? `<img src="${escapeHtml(m.photoURL)}" alt="" class="w-12 h-12 rounded-full object-cover border border-white/10" />`
+      ? `<img src="${escapeHtml(m.photoURL)}" alt="" class="w-12 h-12 rounded-full object-cover border border-white/10" onerror="this.outerHTML = '<div class=\'w-12 h-12 rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[15px] font-bold text-white shadow-lg shadow-black/20\'>${escapeHtml(initials)}</div>';" />`
       : `<div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[15px] font-bold text-white shadow-lg shadow-black/20">${escapeHtml(initials)}</div>`;
 
     return `
@@ -128,7 +128,7 @@ export function renderTeamGrid() {
             <div class="flex items-center justify-between">
               <h3 class="text-[14.5px] font-bold text-gray-100 truncate">${escapeHtml(name)}</h3>
               <div class="flex items-center gap-2">
-                <button class="text-gray-600 hover:text-red-400 transition-colors" onclick="window.deleteMember(${memberId})" title="Remove friend">
+                <button class="delete-friend-btn text-gray-600 hover:text-red-400 transition-colors" data-id="${m.id}" title="Remove friend">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </button>
               </div>
@@ -198,8 +198,7 @@ export async function addNewMember() {
 export async function deleteMember(id) {
   const m = state.members.find(x => x.id === id);
   if (!m) return;
-  if (!confirm("Are you sure you want to remove this friend from your workspace?")) return;
-  if (!confirm(`Remove ${memberName(m)} from every project in your workspace?`)) return;
+  if (!confirm(`Are you sure you want to remove ${memberName(m)} from your workspace and all shared projects?`)) return;
 
   try {
     await deleteMemberRecord(id);

@@ -90,7 +90,7 @@ export function renderProfileSettings() {
   if (displayEmail) displayEmail.textContent = email || "No email available";
   if (avatar) {
     if (user?.photoURL) {
-      avatar.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" />`;
+      avatar.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'; this.parentElement.classList.add('bg-gradient-to-br', 'from-purple', 'to-cyan');" />`;
       avatar.classList.remove('bg-gradient-to-br', 'from-purple', 'to-cyan');
     } else {
       avatar.textContent = initials;

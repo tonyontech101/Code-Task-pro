@@ -347,7 +347,6 @@ async function hydrateAuthenticatedWorkspace() {
 
     workspaceCleanup.add(subscribeToIncomingMessages(handleIncomingMessages, console.error));
   } catch (err) {
-    hydrationStarted = false;
     console.error("Failed to load workspace data:", err);
   }
 }
@@ -413,6 +412,15 @@ function init() {
       navigateToPage("pageInbox");
       renderInbox();
       renderSidebarChatList();
+      return;
+    }
+
+    const deleteMemberBtn = e.target.closest(".delete-friend-btn");
+    if (deleteMemberBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const memberId = deleteMemberBtn.dataset.id;
+      if (window.deleteMember) window.deleteMember(memberId);
       return;
     }
   });
