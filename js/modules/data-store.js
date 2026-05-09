@@ -16,7 +16,11 @@ import {
   serverTimestamp,
   writeBatch,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  storage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
 } from "../../config/config.js";
 import { state } from "./state.js";
 
@@ -931,12 +935,29 @@ export async function declineInvitationRecord(invitationId) {
 }
 
 // ── Messaging (Direct Messages) ───────────────────────────────
-export async function sendChatMessageRecord(receiverUid, text) {
+export async function uploadChatAttachment(file, chatId) {
+  if (!file) return null;
+  const timestamp = Date.now();
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const filePath = `chat_attachments/${chatId}/${timestamp}_${safeName}`;
+  const fileRef = ref(storage, filePath);
+  
+  const snapshot = await uploadBytesResumable(fileRef, file);
+  const downloadURL = await getDownloadURL(snapshot.ref);
+  
+  return {
+    fileUrl: downloadURL,
+    fileName: file.name,
+    fileType: file.type
+  };
+}
+
+export async function sendChatMessageRecord(receiverUid, text, attachment = null) {
   const senderUid = requireUserId();
   const timestamp = Date.now();
   const chatId = [senderUid, receiverUid].sort().join('_');
   
-  const ref = await addDoc(collection(db, COLLECTIONS.messages), {
+  const payload = {
     chatId,
     senderUid,
     receiverUid,
@@ -944,9 +965,17 @@ export async function sendChatMessageRecord(receiverUid, text) {
     timestamp,
     read: false,
     createdAt: serverTimestamp()
-  });
+  };
 
-  return { id: ref.id, senderUid, receiverUid, text, timestamp };
+  if (attachment) {
+    payload.fileUrl = attachment.fileUrl;
+    payload.fileName = attachment.fileName;
+    payload.fileType = attachment.fileType;
+  }
+  
+  const messageRef = await addDoc(collection(db, COLLECTIONS.messages), payload);
+
+  return { id: messageRef.id, ...payload };
 }
 
 export function subscribeToChatMessages(otherUid, onUpdate, onError) {

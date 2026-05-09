@@ -101,19 +101,33 @@ class AppInboxPage extends HTMLElement {
               </div>
 
               <!-- Chat Input -->
-              <div class="chat-input-container">
-                <div class="chat-input-wrap">
-                  <button class="icon-btn chat-attach-btn mr-1" title="Attach File">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                  </button>
-                  <input id="chatInput" type="text" placeholder="Send a message..." onkeydown="if(event.key==='Enter')sendChatMessage()" />
-                  <button class="icon-btn chat-emoji-btn ml-1" title="Emoji">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              <div class="chat-input-container flex-col items-stretch">
+                <!-- File Preview Area -->
+                <div id="chatFilePreviewContainer" class="hidden mb-2 px-3 py-2 bg-elevated border border-white/10 rounded-xl flex items-center justify-between">
+                  <div class="flex items-center gap-2 overflow-hidden">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan shrink-0"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <span id="chatFilePreviewName" class="text-[12px] text-gray-300 truncate">filename.png</span>
+                  </div>
+                  <button class="text-gray-500 hover:text-red-400 p-1 shrink-0" onclick="window.clearChatFileSelection()" title="Remove file">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
                 </div>
-                <button class="chat-send-btn" onclick="sendChatMessage()" title="Send Message">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
+                
+                <div class="flex items-center gap-2 w-full">
+                  <div class="chat-input-wrap flex-1">
+                    <input type="file" id="chatFileInput" class="hidden" onchange="window.handleChatFileSelect(event)" />
+                    <button class="icon-btn chat-attach-btn mr-1" title="Attach File" onclick="document.getElementById('chatFileInput').click()">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
+                    <input id="chatInput" type="text" placeholder="Send a message..." onkeydown="if(event.key==='Enter')sendChatMessage()" />
+                    <button class="icon-btn chat-emoji-btn ml-1" title="Emoji">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    </button>
+                  </div>
+                  <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()" title="Send Message">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
 

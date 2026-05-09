@@ -14,7 +14,8 @@ import {
   updateInboxItemRecord,
   deleteInboxItemRecord,
   markAllInboxReadRecord,
-  clearInboxCollection
+  clearInboxCollection,
+  uploadChatAttachment
 } from '../modules/data-store.js';
 import { auth } from '../../config/config.js';
 import { renderSidebarProjects, renderTasks } from './dashboard-controller.js';
@@ -240,13 +241,14 @@ export function openChat(contactId) {
     // Only update if we are still looking at this contact
     if (state.activeChatContactId !== contactId) return;
 
-    const currentUid = auth.currentUser?.uid;
+    const myUid = auth.currentUser?.uid;
 
     state.chatConversations[contactId] = messages.map(msg => ({
-      from: msg.senderUid === currentUid ? 'me' : 'them',
-      text: msg.text,
+      ...msg,
+      from: msg.senderUid === myUid ? 'me' : 'them',
+      text: escapeHtml(msg.text),
       time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      date: new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' : new Date(msg.timestamp).toLocaleDateString()
+      date: new Date(msg.timestamp).toLocaleDateString()
     }));
 
     if (messages.some(msg => msg.senderUid === contactId && !msg.read)) {
@@ -352,10 +354,24 @@ export function renderChatMessages() {
       html += `<div class="chat-date-divider"><span>${msg.date}</span></div>`;
     }
     const isMe = msg.from === 'me';
+    
+    let attachmentHtml = '';
+    if (msg.fileUrl) {
+      if (msg.fileType && msg.fileType.startsWith('image/')) {
+        attachmentHtml = `<a href="${msg.fileUrl}" target="_blank" class="block mb-2"><img src="${msg.fileUrl}" alt="Attached Image" class="max-w-[200px] rounded-lg border border-white/10" /></a>`;
+      } else {
+        attachmentHtml = `<a href="${msg.fileUrl}" target="_blank" class="flex items-center gap-2 p-2 mb-2 bg-black/20 rounded-lg text-cyan hover:underline text-[13px] border border-white/5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+          <span class="truncate max-w-[150px]">${msg.fileName || 'Download File'}</span>
+        </a>`;
+      }
+    }
+
     html += `
       <div class="chat-msg ${isMe ? 'chat-msg-me' : 'chat-msg-them'}">
         <div class="chat-msg-bubble ${isMe ? 'chat-bubble-me' : 'chat-bubble-them'}">
-          <p class="chat-msg-text">${msg.text}</p>
+          ${attachmentHtml}
+          ${msg.text ? `<p class="chat-msg-text">${msg.text}</p>` : ''}
           <span class="chat-msg-time">${msg.time}</span>
         </div>
       </div>`;
@@ -396,7 +412,17 @@ export function renderSidebarChatList(query = "") {
     const isActive = state.activeChatContactId && c.uid === state.activeChatContactId;
     const conversation = state.chatConversations[c.uid] || [];
     const lastMsg = conversation[conversation.length - 1];
-    const preview = lastMsg ? (lastMsg.from === 'me' ? 'You: ' : '') + lastMsg.text : 'No messages yet';
+    
+    let previewText = 'No messages yet';
+    if (lastMsg) {
+      if (lastMsg.fileUrl) {
+        previewText = (lastMsg.from === 'me' ? 'You sent an attachment' : 'Sent an attachment');
+      } else {
+        previewText = (lastMsg.from === 'me' ? 'You: ' : '') + lastMsg.text;
+      }
+    }
+
+    const preview = previewText;
 
     const avatarHtml = c.photoURL 
       ? `<img src="${escapeHtml(c.photoURL)}" class="sidebar-chat-avatar object-cover" onerror="this.outerHTML = '<div class=\'sidebar-chat-avatar bg-gradient-to-br ${getContactGradient(c.uid)}\'>${c.avatar}</div>';" />`
@@ -450,18 +476,30 @@ export async function clearAllInbox() {
 
 export async function sendChatMessage() {
   const input = document.getElementById('chatInput');
-  if (!input || !input.value.trim() || !state.activeChatContactId) return;
+  const fileInput = document.getElementById('chatFileInput');
+  
+  const text = input ? input.value.trim() : '';
+  const file = fileInput && fileInput.files.length > 0 ? fileInput.files[0] : null;
 
-  const text = input.value;
-  input.value = ''; // Optimistic clear
+  if ((!text && !file) || !state.activeChatContactId) return;
+
+  const btn = document.getElementById('chatSendBtn');
+  if (btn) btn.innerHTML = `<svg class="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
 
   try {
-    await sendChatMessageRecord(state.activeChatContactId, text);
-    // UI will be updated by the real-time subscription
+    let attachmentData = null;
+    if (file) {
+      attachmentData = await uploadChatAttachment(file, state.activeChatContactId);
+      window.clearChatFileSelection();
+    }
+
+    await sendChatMessageRecord(state.activeChatContactId, text, attachmentData);
+    if (input) input.value = '';
   } catch (err) {
     showToast("Failed to send message", "error");
     console.error(err);
-    input.value = text; // Restore if failed
+  } finally {
+    if (btn) btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
   }
 }
 
@@ -532,3 +570,20 @@ export async function declineInvitation(invitationId) {
     console.error(err);
   }
 }
+
+window.handleChatFileSelect = function(e) {
+  const file = e.target.files[0];
+  const container = document.getElementById('chatFilePreviewContainer');
+  const nameEl = document.getElementById('chatFilePreviewName');
+  if (file && container && nameEl) {
+    nameEl.textContent = file.name;
+    container.classList.remove('hidden');
+  }
+};
+
+window.clearChatFileSelection = function() {
+  const input = document.getElementById('chatFileInput');
+  const container = document.getElementById('chatFilePreviewContainer');
+  if (input) input.value = '';
+  if (container) container.classList.add('hidden');
+};

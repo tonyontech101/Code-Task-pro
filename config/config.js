@@ -36,6 +36,13 @@ import {
   arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
 // --- Firebase Config -----------------------------------------
 const firebaseConfig = {
   apiKey:            "AIzaSyBOMgLzJXKRWoTPCc2tnoSNuUytLo0lRn0",
@@ -50,6 +57,7 @@ const firebaseConfig = {
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 async function writeUserProfile(user, overrides = {}) {
@@ -93,7 +101,11 @@ export {
   writeBatch,
   arrayUnion,
   arrayRemove,
-  writeUserProfile
+  writeUserProfile,
+  storage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
 };
 
 // --- Window globals (for non-module scripts: login.js, signup.js) -
