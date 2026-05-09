@@ -72,7 +72,7 @@ class AppDetailPanel extends HTMLElement {
                     <button class="text-gray-600 hover:text-cyan transition-colors" title="Copy Logic" onclick="copyDetailCode(this)">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     </button>
-                    <span class="text-[9px] font-mono text-cyan/50 bg-cyan/5 px-2 py-0.5 rounded border border-cyan/10 uppercase">Javascript</span>
+                    <span class="text-[9px] font-mono text-cyan/50 bg-cyan/5 px-2 py-0.5 rounded border border-cyan/10 uppercase">Code</span>
                   </div>
                 </div>
                 <div class="rounded-xl overflow-hidden border border-white/[0.06] bg-black/40 shadow-inner">

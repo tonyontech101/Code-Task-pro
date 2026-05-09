@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const successView = document.getElementById("successView");
   const googleBtn = document.getElementById("googleLoginBtn");
   const statusEl = document.getElementById("authStatus");
-  const defaultButtonText = signinBtn?.querySelector(".btn-text")?.textContent || "Sign in";
+  const defaultButtonText = signinBtn?.querySelector(".btn-text")?.textContent || "Login";
 
   let cooldownTimer = null;
 
@@ -103,8 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   syncRateLimitUi();
 
-  if (signinBtn) {
-    signinBtn.addEventListener("click", async (e) => {
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const emailVal = emailInput.value.trim();
@@ -135,8 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      signinBtn.classList.add("loading");
-      signinBtn.disabled = true;
+      if (signinBtn) {
+        signinBtn.classList.add("loading");
+        signinBtn.disabled = true;
+      }
       showStatus("");
 
       try {
@@ -179,7 +182,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         showStatus(msg, "error");
-        signinBtn.classList.remove("loading");
+        if (signinBtn) {
+          signinBtn.classList.remove("loading");
+        }
         syncRateLimitUi();
       }
     });

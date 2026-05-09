@@ -94,7 +94,7 @@ export function renderProfileSettings() {
   if (displayEmail) displayEmail.textContent = email || "No email available";
   if (avatar) {
     if (user?.photoURL) {
-      avatar.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'; this.parentElement.classList.add('bg-gradient-to-br', 'from-purple', 'to-cyan');" />`;
+      avatar.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.outerHTML = '<div class=\\'w-full h-full rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[13px] font-bold text-white\\'>${initials}</div>';" />`;
       avatar.classList.remove('bg-gradient-to-br', 'from-purple', 'to-cyan');
     } else {
       avatar.textContent = initials;

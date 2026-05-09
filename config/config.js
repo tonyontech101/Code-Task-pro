@@ -1,6 +1,6 @@
-// ─────────────────────────────────────────────────────────────
-// config/config.js  —  Single Firebase initialisation point
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
+// config/config.js  -  Single Firebase initialisation point
+// -------------------------------------------------------------
 
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -36,7 +36,7 @@ import {
   arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── Firebase Config ──────────────────────────────────────────
+// --- Firebase Config -----------------------------------------
 const firebaseConfig = {
   apiKey:            "AIzaSyBOMgLzJXKRWoTPCc2tnoSNuUytLo0lRn0",
   authDomain:        "codetaskpro-aaf0c.firebaseapp.com",
@@ -46,7 +46,7 @@ const firebaseConfig = {
   appId:             "1:307069215768:web:038a668901f571b2598f6d"
 };
 
-// ── Initialise Firebase (once) ───────────────────────────────
+// --- Initialise Firebase (once) ------------------------------
 const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db   = getFirestore(app);
@@ -70,7 +70,7 @@ async function writeUserProfile(user, overrides = {}) {
   }, { merge: true });
 }
 
-// ── ES Module exports (for auth-guard.js etc.) ───────────────
+// --- ES Module exports (for auth-guard.js etc.) --------------
 export {
   auth,
   db,
@@ -96,14 +96,14 @@ export {
   writeUserProfile
 };
 
-// ── Window globals (for non-module scripts: login.js, signup.js) ─
+// --- Window globals (for non-module scripts: login.js, signup.js) -
 window.auth = auth;
 window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
 window.signInWithEmailAndPassword     = signInWithEmailAndPassword;
 window.updateProfile                  = updateProfile;
 window.writeUserProfile               = writeUserProfile;
 
-// ── Google Sign-In (shared by login + signup) ────────────────
+// --- Google Sign-In (shared by login + signup) ---------------
 window.signInWithGoogle = async () => {
   try {
     const credential = await signInWithPopup(auth, provider);
@@ -115,7 +115,7 @@ window.signInWithGoogle = async () => {
   }
 };
 
-// ── Logout (called from sidebar button) ──────────────────────
+// --- Logout (called from sidebar button) ---------------------
 window.logout = async () => {
   try {
     await signOut(auth);

@@ -66,7 +66,7 @@ class AppHeader extends HTMLElement {
 
       if (avatarEl) {
         if (user.photoURL) {
-          avatarEl.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'; this.parentElement.classList.add('bg-gradient-to-br', 'from-purple', 'to-cyan');" />`;
+          avatarEl.innerHTML = `<img src="${escapeHtml(user.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.outerHTML = '<div class=\\'w-full h-full rounded-full bg-gradient-to-br from-purple to-cyan flex items-center justify-center text-[13px] font-bold text-white\\'>${initials}</div>';" />`;
           avatarEl.classList.remove('bg-gradient-to-br', 'from-purple', 'to-cyan');
         } else {
           avatarEl.textContent = initials;

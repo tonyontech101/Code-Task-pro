@@ -219,7 +219,7 @@ export function openChat(contactId) {
   if (headerAvatar) {
     headerAvatar.className = `chat-header-avatar bg-gradient-to-br ${getContactGradient(contactId)}`;
     if (contact.photoURL) {
-      headerAvatar.innerHTML = `<img src="${escapeHtml(contact.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.parentElement.textContent='${initials}'; this.parentElement.className='chat-header-avatar bg-gradient-to-br ${getContactGradient(contactId)}';" />`;
+      headerAvatar.innerHTML = `<img src="${escapeHtml(contact.photoURL)}" class="w-full h-full rounded-full object-cover" onerror="this.outerHTML = '<div class=\\'w-full h-full rounded-full bg-gradient-to-br ${getContactGradient(contactId)} flex items-center justify-center text-[13px] font-bold text-white\\'>${initials}</div>';" />`;
     } else {
       headerAvatar.textContent = initials;
     }

@@ -37,13 +37,13 @@
 <script type="module" src="config/config.js"></script>
 <script type="module" src="Auth/auth-guard.js"></script>
 
-  <!-- ── App Shell ─────────────────────────────────────────── -->
+  <!-- --- App Shell ------------------------------------------- -->
   <div class="flex h-screen overflow-hidden">
 
-    <!-- ── Sidebar ────────────────────────────────────────── -->
+    <!-- --- Sidebar ------------------------------------------ -->
     <app-sidebar style="display: contents;"></app-sidebar>
 
-    <!-- ── Main Area ────────────────────────────────────────── -->
+    <!-- --- Main Area ------------------------------------------ -->
     <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
 
       <!-- Top Nav -->
@@ -52,13 +52,13 @@
       <!-- Content -->
       <div id="mainContent" class="flex flex-1 overflow-hidden">
 
-        <!-- ═══ PAGE: Dashboard (Task Area + Detail Panel) ═══ -->
+        <!-- === PAGE: Dashboard (Task Area + Detail Panel) === -->
         <div id="pageDashboard" class="flex flex-1 overflow-hidden">
           <app-task-area style="display: contents;"></app-task-area>
           <app-detail-panel style="display: contents;"></app-detail-panel>
         </div>
 
-        <!-- ═══ PAGE: Projects ═══ -->
+        <!-- === PAGE: Projects === -->
         <div id="pageProjects" class="flex flex-col flex-1 overflow-hidden hidden">
           <div class="flex flex-col sm:flex-row sm:items-start justify-between px-4 md:px-7 pt-5 md:pt-6 pb-3 md:pb-4 flex-shrink-0 gap-3">
             <div>
@@ -75,7 +75,7 @@
           </div>
         </div>
 
-        <!-- ═══ PAGE: Team ═══ -->
+        <!-- === PAGE: Team === -->
         <div id="pageTeam" class="flex flex-col flex-1 overflow-hidden hidden">
           <div class="flex flex-col sm:flex-row sm:items-start justify-between px-4 md:px-7 pt-5 md:pt-6 pb-3 md:pb-4 flex-shrink-0 gap-3">
             <div>
@@ -115,17 +115,17 @@
           </div>
         </div>
 
-        <!-- ═══ PAGE: Inbox ═══ -->
+        <!-- === PAGE: Inbox === -->
         <div id="pageInbox" class="flex flex-1 overflow-hidden hidden">
           <app-inbox-page style="display: contents;"></app-inbox-page>
         </div>
 
-          <!-- ═══ PAGE: Notes ═══ -->
+          <!-- === PAGE: Notes === -->
           <div id="pageNotes" class="flex flex-1 overflow-hidden hidden">
             <app-notes-page style="display: contents;"></app-notes-page>
           </div>
 
-          <!-- ═══ PAGE: Settings ═══ -->
+          <!-- === PAGE: Settings === -->
           <div id="pageSettings" class="flex flex-1 overflow-hidden hidden">
             <app-settings-page style="display: contents;"></app-settings-page>
           </div>

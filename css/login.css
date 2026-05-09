@@ -157,6 +157,9 @@
       max-width: 440px;
       opacity: 0;
       animation: fadeUp 0.6s 0.2s forwards;
+      position: relative;
+      z-index: 5;
+      pointer-events: auto;
     }
 
     .card-title {
@@ -321,6 +324,8 @@
       position: relative;
       overflow: hidden;
       letter-spacing: 0.01em;
+      z-index: 100;
+      pointer-events: auto !important;
     }
 
     .btn-primary:hover {
@@ -389,6 +394,7 @@
     .btn-google:hover {
       background: var(--surface);
       border-color: #444;
+      z-index: 10;
     }
 
     /* ── SUCCESS STATE ── */
@@ -399,9 +405,13 @@
       justify-content: center;
       text-align: center;
       gap: 12px;
+      pointer-events: none;
     }
 
-    .success-overlay.show { display: flex; }
+    .success-overlay.show { 
+      display: flex; 
+      pointer-events: auto;
+    }
 
     .success-icon {
       width: 56px;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeFlow — Developer Task Management</title>
+<title>CodeFlow - Developer Task Management</title>
 <link rel="icon" type="image/png" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -30,10 +30,30 @@
     <li><a href="#code">Developer</a></li>
   </ul>
   <div class="nav-cta">
-    <a class="btn-ghost" href="login-page.html">Sign in</a>
-    <a class="btn-primary" href="signup-page.html">Get Started Free →</a>
+    <a class="btn-ghost" href="login-page.html">Login</a>
+    <a class="btn-primary" href="login-page.html">Get Started Free -></a>
   </div>
+  <button class="mobile-menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 </nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu-content">
+    <ul class="mobile-nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it Works</a></li>
+      <li><a href="#code">Developer</a></li>
+    </ul>
+    <div class="mobile-nav-cta">
+      <a class="btn-primary" href="login-page.html">Get Started Free -></a>
+      <a class="btn-ghost" href="login-page.html">Login</a>
+    </div>
+  </div>
+</div>
 
 <!-- HERO -->
 <div class="hero">
@@ -59,16 +79,16 @@
       Login
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </a>
-    <a href="signup-page.html" class="btn-ghost-lg">
+    <a href="login-page.html" class="btn-ghost-lg">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 6.5C6.5 5.67 7.17 5 8 5s1.5.67 1.5 1.5c0 .83-.67 1.5-1.5 1.5v1.5M8 12v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      See features
+      Login
     </a>
   </div>
 
-  <p class="hero-note">Email sign-in · Firebase sync · Team collaboration · <span>No credit card required</span></p>
+  <p class="hero-note">Email sign-in | Firebase sync | Team collaboration | <span>No credit card required</span></p>
 </div>
 
-<!-- DASHBOARD PREVIEW -->
+<!-- DASHBOARD PREVIEW (desktop only) -->
 <div class="preview-section">
   <div class="preview-wrap">
     <div class="preview-topbar">
@@ -91,14 +111,14 @@
         </div>
         <div class="ps-section">
           <div class="ps-label">Priority</div>
-          <div class="ps-item"><span style="color:var(--urgent)">● </span>Urgent</div>
-          <div class="ps-item"><span style="color:var(--high)">● </span>High</div>
-          <div class="ps-item"><span style="color:var(--low)">● </span>Low</div>
+          <div class="ps-item"><span style="color:var(--urgent)">* </span>Urgent</div>
+          <div class="ps-item"><span style="color:var(--high)">* </span>High</div>
+          <div class="ps-item"><span style="color:var(--low)">* </span>Low</div>
         </div>
         <div class="ps-section">
           <div class="ps-label">Labels</div>
-          <div class="ps-item">◇ WIP</div>
-          <div class="ps-item">◇ Backend</div>
+          <div class="ps-item"># WIP</div>
+          <div class="ps-item"># Backend</div>
         </div>
       </div>
       <div class="preview-main">
@@ -118,29 +138,76 @@
         </div>
         <div class="task-row">
           <div><span class="priority-badge p-urgent">Urgent</span></div>
-          <div><div class="task-title">Fix auth token refresh bug</div><div class="task-sub">Api v3 · Updated 2h ago</div></div>
+          <div><div class="task-title">Fix auth token refresh bug</div><div class="task-sub">Api v3 - Updated 2h ago</div></div>
           <div class="task-deadline">Apr 28, 2026</div>
           <div><span class="task-label">Backend</span></div>
         </div>
         <div class="task-row">
           <div><span class="priority-badge p-high">High</span></div>
-          <div><div class="task-title">Implement rate limiting middleware</div><div class="task-sub">Core v2.1 · Updated 5h ago</div></div>
+          <div><div class="task-title">Implement rate limiting middleware</div><div class="task-sub">Core v2.1 - Updated 5h ago</div></div>
           <div class="task-deadline">May 02, 2026</div>
           <div><span class="task-label">WIP</span></div>
         </div>
         <div class="task-row">
           <div><span class="priority-badge p-high">High</span></div>
-          <div><div class="task-title">Optimize DB query performance</div><div class="task-sub">Api v3 · Updated 1d ago</div></div>
+          <div><div class="task-title">Optimize DB query performance</div><div class="task-sub">Api v3 - Updated 1d ago</div></div>
           <div class="task-deadline">May 05, 2026</div>
           <div><span class="task-label">Backend</span></div>
         </div>
         <div class="task-row">
           <div><span class="priority-badge p-low">Low</span></div>
-          <div><div class="task-title">Update API documentation</div><div class="task-sub">Api v3 · Updated 2d ago</div></div>
+          <div><div class="task-title">Update API documentation</div><div class="task-sub">Api v3 - Updated 2d ago</div></div>
           <div class="task-deadline">May 10, 2026</div>
           <div><span class="task-label">WIP</span></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE PREVIEW REPLACEMENT -->
+<div class="mobile-preview-section">
+  <div class="mobile-preview-card">
+    <div class="mpc-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><circle cx="17.5" cy="17.5" r="3.5"/></svg>
+    </div>
+    <div class="mpc-body">
+      <div class="mpc-label">Active Tasks</div>
+      <div class="mpc-value">9 <span class="mpc-sub">across 2 projects</span></div>
+    </div>
+    <div class="mpc-bar">
+      <div class="mpc-bar-fill" style="width:72%"></div>
+    </div>
+    <div class="mpc-pct">72% complete</div>
+  </div>
+
+  <div class="mobile-preview-card">
+    <div class="mpc-icon mpc-icon--purple">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+    <div class="mpc-body">
+      <div class="mpc-label">Team Messaging</div>
+      <div class="mpc-value">Live <span class="mpc-sub">real-time chat</span></div>
+    </div>
+    <div class="mpc-tags">
+      <span class="mpc-tag">Unread badges</span>
+      <span class="mpc-tag">Sound alerts</span>
+      <span class="mpc-tag">Desktop notify</span>
+    </div>
+  </div>
+
+  <div class="mobile-preview-card">
+    <div class="mpc-icon mpc-icon--orange">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+    </div>
+    <div class="mpc-body">
+      <div class="mpc-label">Shared Notes</div>
+      <div class="mpc-value">Personal & Team <span class="mpc-sub">with pinning</span></div>
+    </div>
+    <div class="mpc-tags">
+      <span class="mpc-tag">Tags</span>
+      <span class="mpc-tag">Color coding</span>
+      <span class="mpc-tag">Search</span>
     </div>
   </div>
 </div>
@@ -152,34 +219,34 @@
     <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
     <p class="section-sub">Built specifically for developers who want to stay focused, not navigate bloated PM tools.</p>
 
-    <div class="features-grid">
+    <div class="features-grid reveal-stagger">
       <div class="feat-card">
-        <div class="feat-icon">📋</div>
+        <div class="feat-icon">LIST</div>
         <div class="feat-title">Task Dashboard</div>
         <div class="feat-desc">Track tasks by project, priority, label, deadline, completion state, notes, code snippets, and detail-panel activity.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">💬</div>
+        <div class="feat-icon">CHAT</div>
         <div class="feat-title">Friend Messaging</div>
         <div class="feat-desc">Chat with friends using real-time messages, unread indicators, message sounds, and optional desktop notifications.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">📓</div>
+        <div class="feat-icon">NOTE</div>
         <div class="feat-title">Personal & Team Notes</div>
         <div class="feat-desc">Create notes with tags, colors, pinning, search, and personal or team sharing for workspace documentation.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">📊</div>
+        <div class="feat-icon">STAT</div>
         <div class="feat-title">Project Progress</div>
         <div class="feat-desc">Create projects, assign members, view task counts, monitor progress, and see when every task in a project is complete.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">💻</div>
+        <div class="feat-icon">MAIL</div>
         <div class="feat-title">Inbox & Invitations</div>
         <div class="feat-desc">Receive project invitations and workspace updates in the inbox, with read states, filters, badges, and notification sounds.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">✨</div>
+        <div class="feat-icon">USER</div>
         <div class="feat-title">Profile & Settings</div>
         <div class="feat-desc">Edit your username, view your email, check task and project totals, and control notification preferences from settings.</div>
       </div>
@@ -190,7 +257,7 @@
 <!-- STATS -->
 <section class="stats reveal">
   <div class="container">
-    <div class="stats-grid reveal">
+    <div class="stats-grid reveal reveal-stagger">
       <div class="stat-card">
         <div class="stat-num">3</div>
         <div class="stat-label">Core work views: tasks, projects, notes</div>
@@ -221,16 +288,16 @@
         <p class="section-sub" style="margin-bottom: 32px;">Each task can carry its description, notes, code snippet, tags, priority, deadline, and activity in one detail panel.</p>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Code snippets in task detail panels
+            <span style="color:var(--cyan)">-</span> Code snippets in task detail panels
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Tags, notes, and activity per task
+            <span style="color:var(--cyan)">-</span> Tags, notes, and activity per task
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> JetBrains Mono throughout the UI
+            <span style="color:var(--cyan)">-</span> JetBrains Mono throughout the UI
           </div>
           <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted2);">
-            <span style="color:var(--cyan)">✓</span> Built with Tailwind, vanilla JS, Firebase Auth, and Firestore
+            <span style="color:var(--cyan)">-</span> Built with Tailwind, vanilla JS, Firebase Auth, and Firestore
           </div>
         </div>
       </div>
@@ -242,7 +309,7 @@
           <span class="code-file">task-detail.js</span>
         </div>
         <div class="code-content">
-<span class="cmt">// Task detail panel — code snippet</span><br>
+<span class="cmt">// Task detail panel - code snippet</span><br>
 <span class="kw">const</span> <span class="fn">createTask</span> = (<span class="prop">options</span>) => {<br>
 &nbsp;&nbsp;<span class="kw">const</span> <span class="prop">task</span> = {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="prop">id</span>: <span class="fn">crypto</span>.<span class="fn">randomUUID</span>(),<br>
@@ -272,7 +339,7 @@
     <div class="section-tag">// How it works</div>
     <h2 class="section-title">From zero to<br>organized in seconds.</h2>
     <p class="section-sub">Create an account, set up projects, then coordinate tasks, notes, and chat in one workspace.</p>
-    <div class="steps-grid reveal">
+    <div class="steps-grid reveal reveal-stagger">
       <div class="step-card">
         <div class="step-num">01</div>
         <div class="step-title">Organize</div>
@@ -297,16 +364,16 @@
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-free-badge">
-        <span>★</span> Account-based workspace
+        <span>*</span> Account-based workspace
       </div>
       <h2 class="cta-title">Start shipping<br>code like a pro.</h2>
       <p class="cta-sub">Use CodeFlow to organize projects, track tasks, share notes, message friends, and keep your workspace progress visible.</p>
       <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-        <a href="signup-page.html" class="btn-primary-lg">
-          Create an account →
+        <a href="login-page.html" class="btn-primary-lg">
+          Get Started ->
         </a>
         <a href="login-page.html" class="btn-ghost-lg">
-          Sign in
+          Login
         </a>
       </div>
     </div>
@@ -316,11 +383,11 @@
 <!-- FOOTER -->
 <footer>
   <div class="footer-left">
-    © 2026 <span>CodeFlow</span> · Built for developers
+    (c) 2026 <span>CodeFlow</span> | Built for developers
   </div>
   <ul class="footer-links">
-    <li><a href="login-page.html">Sign in</a></li>
-    <li><a href="signup-page.html">Create account</a></li>
+    <li><a href="login-page.html">Login</a></li>
+    <li><a href="login-page.html">Get Started</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How it works</a></li>
   </ul>
