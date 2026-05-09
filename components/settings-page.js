@@ -89,14 +89,14 @@ class AppSettingsPage extends HTMLElement {
             <div class="mb-8">
               <p class="text-[11px] font-bold uppercase tracking-widest text-cyan mb-2">Preferences</p>
               <h2 class="text-[24px] font-bold text-white mb-2">Notifications</h2>
-              <p class="text-[14px] text-gray-500">Choose how CodeFlow alerts you while you work.</p>
+              <p class="text-[14px] text-gray-500">Choose how CodeTask alerts you while you work.</p>
             </div>
 
             <div class="settings-panel">
               <div class="settings-panel-header">
                 <div>
                   <h3>Active Notification Features</h3>
-                  <p>Controls for alerts currently supported in CodeFlow</p>
+                  <p>Controls for alerts currently supported in CodeTask</p>
                 </div>
               </div>
 

@@ -356,7 +356,7 @@ if (window.codetaskAuthReady) hydrateAuthenticatedWorkspace();
 
 // Mock data initialization (or fetch from Firebase later)
 function init() {
-  console.log("Initializing CodeFlow...");
+  console.log("Initializing CodeTask...");
   
   // Initial Renders
   if ("Notification" in window && Notification.permission === "granted") {

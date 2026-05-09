@@ -1,5 +1,5 @@
 /**
- * state.js - Centralized state management for CodeFlow
+ * state.js - Centralized state management for CodeTask
  */
 
 // Notes no longer seeded from static dummy data; Firestore provides real records.
